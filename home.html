@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CT Spartan – Sistema de Gestão</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- SIDEBAR -->
+    <nav class="sidebar">
+        <div class="logo">
+            <img src="img/spartan.png" alt="Logo CT Spartan">
+            <div class="logo-text">
+                <h1>CT SPARTAN</h1>
+                <span>Sistema de Gestão</span>
+            </div>
+        </div>
+        <div class="nav">
+            <div class="nav-item active" onclick="navigate('dashboard')">
+                <span class="icon"><i class="bi bi-speedometer2"></i></span> Dashboard
+            </div>
+
+            <div class="nav-item" onclick="navigate('alunos')">
+                <span class="icon"><i class="bi bi-people"></i></span> Cadastro de Alunos
+            </div>
+
+
+
+            <div class="nav-item" onclick="navigate('turmas')">
+                <span class="icon"><i class="bi bi-calendar3"></i></span> Turmas & Horários
+            </div>
+
+            <div class="nav-item" onclick="navigate('avaliacoes')">
+                <span class="icon"><i class="bi bi-clipboard-data"></i></span> Avaliações Físicas
+            </div>
+
+            <div class="nav-item" onclick="navigate('alertas')">
+                <span class="icon"><i class="bi bi-bell"></i></span> Alertas
+            </div>
+
+            <div class="nav-item" onclick="navigate('pagamentos')">
+                <span class="icon"><i class="bi bi-cash-stack"></i></span> Pagamentos
+            </div>
+        </div>
+        <div class="sidebar-footer">
+            <small>CT Spartan 2026</small>
+        </div>
+    </nav>
+
+    <!-- MAIN -->
+    <div class="main">
+        <div class="topbar">
+            <h2 id="page-title">Dashboard</h2>
+            <div class="topbar-actions">
+                <div class="notif-bell" onclick="navigate('alertas')">
+                    <i class="bi bi-bell-fill"></i>
+                    <div class="notif-dot"></div>
+                </div>
+
+                <button class="btn btn-primary" onclick="openModal()">
+                    <i class="bi bi-plus-lg"></i> Novo Aluno
+                </button>
+
+                <button class="btn btn-ghost" onclick="logout()">
+                    <i class="bi bi-box-arrow-right"></i> Sair
+                </button>
+            </div>
+        </div>
+
+        <div class="content">
+
+            <!-- DASHBOARD -->
+            <div class="page active" id="page-dashboard">
+                <div class="stats-grid">
+                    <div class="stat-card" onclick="navigate('alunos')">
+                        <div class="label">Total Ativos</div>
+                        <div class="value" id="stat-ativos">0</div>
+                        <div class="sub">alunos matriculados</div>
+                        <div class="accent-bar" style="background: var(--green)"></div>
+                    </div>
+                    <div class="stat-card" onclick="navigate('alunos')">
+                        <div class="label">Musculação</div>
+                        <div class="value" id="stat-musc">0</div>
+                        <div class="sub">alunos</div>
+                        <div class="accent-bar" style="background: var(--blue)"></div>
+                    </div>
+                    <div class="stat-card" onclick="navigate('alunos')">
+                        <div class="label">Funcional</div>
+                        <div class="value" id="stat-func">0</div>
+                        <div class="sub">alunos</div>
+                        <div class="accent-bar" style="background: var(--accent2)"></div>
+                    </div>
+                    <div class="stat-card" onclick="navigate('alertas')">
+                        <div class="label">Vencendo (7 dias)</div>
+                        <div class="value" id="stat-venc">0</div>
+                        <div class="sub">requer atenção</div>
+                        <div class="accent-bar" style="background: var(--gold)"></div>
+                    </div>
+                </div>
+
+                <div class="dash-grid">
+                    <div class="card">
+                        <h3>
+                            <i class="bi bi-exclamation-triangle-fill text-warning"></i>
+                            Alertas de Vencimento
+                        </h3>
+                        <div id="dash-alertas"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>
+                            <i class="bi bi-clipboard2-pulse-fill text-primary"></i>
+                            Avaliações da Semana
+                        </h3>
+                        <div id="dash-avals"></div>
+                    </div>
+                </div>
+
+                <div class="dash-grid">
+                    <div class="card">
+                        <h3>
+                            <i class="bi bi-bar-chart-line-fill text-primary"></i>
+                            Alunos por Horário (Musculação)
+                        </h3>
+                        <div class="bar-chart" id="bar-chart-musc"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>
+                            <i class="bi bi-pie-chart-fill text-warning"></i>
+                            Distribuição por Modalidade
+                        </h3>
+                        <div class="donut-wrap">
+                            <svg width="120" height="120" viewBox="0 0 120 120" id="donut-svg">
+                                <circle cx="60" cy="60" r="45" fill="none" stroke="#1a1a26" stroke-width="18" />
+                                <circle id="donut-func" cx="60" cy="60" r="45" fill="none" stroke="#ff6b35"
+                                    stroke-width="18" stroke-dasharray="0 283" stroke-dashoffset="70.75"
+                                    style="transform: rotate(-90deg); transform-origin: 60px 60px;" />
+                                <circle id="donut-musc" cx="60" cy="60" r="45" fill="none" stroke="#3b82f6"
+                                    stroke-width="18" stroke-dasharray="0 283" stroke-dashoffset="70.75"
+                                    style="transform: rotate(-90deg); transform-origin: 60px 60px;" />
+                            </svg>
+
+                            <div class="donut-legend">
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background:#3b82f6"></div>
+                                    <i class="bi bi-activity text-primary"></i>
+                                    Musculação <strong id="leg-musc">0</strong>
+                                </div>
+
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background:#ff6b35"></div>
+                                    <i class="bi bi-lightning-charge-fill text-warning"></i>
+                                    Funcional <strong id="leg-func">0</strong>
+                                </div>
+
+                                <div class="legend-item">
+                                    <div class="legend-dot" style="background:#ef4444"></div>
+                                    <i class="bi bi-exclamation-circle-fill text-danger"></i>
+                                    Atrasados <strong id="leg-atr">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                
+
+
+            </div>
+
+            <!-- ALUNOS -->
+            <div class="page" id="page-alunos">
+
+                <div class="filters">
+
+                    <!-- BUSCA -->
+                    <div class="search-wrapper">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Buscar aluno..." id="search-aluno"
+                            oninput="renderAlunos()">
+                    </div>
+
+                    <!-- HORÁRIO -->
+                    <div class="select-wrapper">
+                        <i class="bi bi-clock"></i>
+                        <select class="filter-select" id="filter-horario" onchange="renderAlunos()">
+                            <option value="">Todos horários</option>
+                        </select>
+                    </div>
+
+                    <!-- MODALIDADE -->
+                    <div class="select-wrapper">
+                        <i class="bi bi-activity"></i>
+                        <select class="filter-select" id="filter-modal" onchange="renderAlunos()">
+                            <option value="">Todas modalidades</option>
+                            <option value="musculacao">Musculação</option>
+                            <option value="funcional">Funcional</option>
+                        </select>
+                    </div>
+
+                    <!-- STATUS -->
+                    <div class="select-wrapper">
+                        <i class="bi bi-shield-check"></i>
+                        <select class="filter-select" id="filter-status" onchange="renderAlunos()">
+                            <option value="">Todos status</option>
+                            <option value="Ativo">Ativo</option>
+                            <option value="Atrasado">Atrasado</option>
+                            <option value="Inativo">Inativo</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Modalidade</th>
+                                    <th>Turma / Horário</th>
+                                    <th>Vencimento</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="alunos-tbody"></tbody>
+
+                        </table>
+
+                        <!-- EMPTY STATE -->
+                        <div class="empty" id="alunos-empty" style="display:none">
+
+                            <div class="empty-icon">
+                                <i class="bi bi-search text-muted"></i>
+                            </div>
+
+                            <div>Nenhum aluno encontrado</div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- TURMAS -->
+            <div class="page" id="page-turmas">
+
+                <div class="section-title">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                    Funcional – Turmas Fixas
+                </div>
+                <div class="turma-grid" id="turma-funcional"></div>
+
+                <br>
+
+                <div class="section-title">
+                    <i class="bi bi-barbell"></i>
+                    Musculação – Fluxo por Horário
+                </div>
+                <div class="turma-grid" id="turma-musculacao"></div>
+
+            </div>
+
+            <!-- AVALIAÇÕES -->
+            <div class="page" id="page-avaliacoes">
+
+                <div class="filters">
+
+                    <!-- BUSCA -->
+                    <div class="search-wrapper">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Buscar aluno..." id="search-aval"
+                            oninput="renderAvaliacoes()">
+                    </div>
+
+                    <!-- STATUS -->
+                    <div class="select-wrapper">
+                        <i class="bi bi-clipboard-check"></i>
+                        <select class="filter-select" id="filter-aval-status">
+                            <option value="">Todos</option>
+                            <option value="Pendente">Pendente</option>
+                            <option value="Realizada">Realizada</option>
+                        </select>
+                    </div>
+
+                </div>
+
+                <div class="card">
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Modalidade</th>
+                                    <th>Data Avaliação</th>
+                                    <th>Responsável</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="aval-tbody"></tbody>
+
+                        </table>
+
+                        <div class="empty" id="aval-empty" style="display:none">
+
+                            <div class="empty-icon">
+                                <i class="bi bi-clipboard-x"></i>
+                            </div>
+
+                            <div>Nenhuma avaliação encontrada</div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- ALERTAS -->
+            <div class="page" id="page-alertas">
+
+                <div class="section-title">
+                    <i class="bi bi-exclamation-circle-fill" style="color:var(--danger);"></i>
+                    Planos Vencidos / Atrasados
+                </div>
+                <div class="card" style="margin-bottom:20px">
+                    <div id="alertas-vencidos"></div>
+                </div>
+
+                <div class="section-title">
+                    <i class="bi bi-hourglass-split" style="color:var(--gold);"></i>
+                    Vencendo em Breve (próximos 7 dias)
+                </div>
+                <div class="card" style="margin-bottom:20px">
+                    <div id="alertas-proximos"></div>
+                </div>
+
+                <div class="section-title">
+                    <i class="bi bi-clipboard2-pulse-fill" style="color:var(--blue);"></i>
+                    Avaliações Físicas Pendentes
+                </div>
+                <div class="card">
+                    <div id="alertas-avals"></div>
+                </div>
+
+            </div>
+
+            <!-- PAGAMENTOS -->
+            <div class="page" id="page-pagamentos">
+
+                <!-- FILTROS -->
+                <div class="filters">
+
+                    <div class="search-wrapper">
+                        <i class="bi bi-search search-icon"></i>
+                        <input type="text" class="search-input" placeholder="Buscar aluno..." id="search-pagamento"
+                            oninput="renderPagamentos()">
+                    </div>
+
+                    <div class="select-wrapper">
+                        <i class="bi bi-calendar3"></i>
+                        <input type="month" id="filter-mes" class="filter-select" onchange="renderPagamentos()">
+                    </div>
+
+                    <div class="select-wrapper">
+                        <i class="bi bi-activity"></i>
+
+                        <select id="filter-modalidade-pag" class="filter-select" onchange="renderPagamentos()">
+
+                            <option value="">Todas modalidades</option>
+                            <option value="musculacao">Musculação</option>
+                            <option value="funcional">Funcional</option>
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+
+                <!-- CARD FATURAMENTO -->
+                <div class="stats-grid" style="margin-bottom:20px">
+
+                    <div class="stat-card">
+                        <div class="label">Faturamento do Mês</div>
+
+                        <div class="value" id="fat-mes">
+                            R$ 0
+                        </div>
+
+                        <div class="sub">
+                            pagamentos registrados
+                        </div>
+
+                        <div class="accent-bar" style="background:var(--green)"></div>
+                    </div>
+
+                </div>
+
+
+                <!-- TABELA PAGAMENTOS -->
+                <div class="card">
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Modalidade</th>
+                                    <th>Mês</th>
+                                    <th>Valor</th>
+                                    <th>Data</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="pagamentos-tbody"></tbody>
+
+                        </table>
+
+                        <!-- EMPTY -->
+                        <div class="empty" id="pagamentos-empty" style="display:none">
+
+                            <div class="empty-icon">
+                                <i class="bi bi-cash-coin"></i>
+                            </div>
+
+                            <div>Nenhum pagamento encontrado</div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL NOVO ALUNO -->
+    <div class="modal-backdrop" id="modal-backdrop">
+        <div class="modal">
+
+            <div class="modal-header">
+                <h3 id="modal-title">Novo Aluno</h3>
+                <button class="modal-close" onclick="closeModal()">✕</button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="form-grid">
+
+                    <div class="form-group full">
+                        <label>Nome</label>
+                        <input type="text" id="f-nome" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Telefone</label>
+                        <input type="tel" id="f-tel" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" id="f-email" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Modalidade</label>
+                        <select id="f-modal" class="form-select" onchange="onModalChange()">
+                            <option value="">Selecione</option>
+                            <option value="musculacao">Musculação</option>
+                            <option value="funcional">Funcional</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="f-turma-group" style="display:none">
+                        <label>Turma</label>
+                        <select id="f-turma" class="form-select">
+                            <option value="manha-06">Manhã 06:00</option>
+                            <option value="noite-19">Noite 19:00</option>
+                            <option value="noite-20">Noite 20:00</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="f-horario-group">
+                        <label>Horário</label>
+                        <select id="f-horario" class="form-select"></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Vencimento</label>
+                        <input type="date" id="f-venc" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Avaliação Física</label>
+                        <input type="date" id="f-aval" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="f-status" class="form-select">
+                            <option value="Ativo">Ativo</option>
+                            <option value="Inativo">Inativo</option>
+                            <option value="Atrasado">Atrasado</option>
+                        </select>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+                <button class="btn btn-primary" onclick="saveAluno()">Salvar Aluno</button>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- MODAL PAGAMENTO -->
+    <div class="modal-backdrop" id="modal-pagamento">
+
+        <div class="modal">
+
+            <div class="modal-header">
+                <h3>Registrar Pagamento</h3>
+                <button class="modal-close" onclick="fecharModalPagamento()">✕</button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="form-grid">
+
+                    <div class="form-group full">
+                        <label>Aluno</label>
+                        <input type="text" id="p-nome" class="form-input" disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Modalidade</label>
+                        <input type="text" id="p-modalidade" class="form-input" disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Valor</label>
+                        <input type="text" id="p-valor" class="form-input" disabled>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Data do pagamento</label>
+                        <input type="date" id="p-data" class="form-input">
+                    </div>
+
+                    <div class="form-group full">
+                        <label>Mês do pagamento</label>
+                        <input type="month" id="p-mes" class="form-input">
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="fecharModalPagamento()">Cancelar</button>
+                <button class="btn btn-primary" onclick="confirmarPagamento()">Registrar</button>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- TOAST -->
+    <div class="toast" id="toast">✅ Aluno salvo com sucesso!</div>
+
+    <!-- FOOTER -->
+    <footer class="app-footer">
+        <div class="footer-content">
+            <span>
+                <i class="bi bi-code-slash"></i>
+                Desenvolvido por <strong>Hector Araújo</strong>
+            </span>
+
+            <span>
+                <i class="bi bi-calendar3"></i>
+                © 2026 CT Spartan
+            </span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="module" src="js/script.js"></script>
+    <script type="module" src="js/home.js"></script>
+</body>
+
+</html>
