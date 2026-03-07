@@ -499,118 +499,7 @@ function populateHorarioFilter() {
       .join("");
 }
 
-function renderAlunos() {
-  const q = document.getElementById("search-aluno").value.toLowerCase();
-  const modal = document.getElementById("filter-modal").value;
-  const status = document.getElementById("filter-status").value;
 
-  const horEl = document.getElementById("filter-horario");
-  const hor = horEl ? horEl.value : "";
-
-  let list = alunos.filter((a) => {
-    if (q && !a.nome.toLowerCase().includes(q)) return false;
-
-    if (modal && a.modalidade !== modal) return false;
-
-    if (status && calcularStatusAluno(a) !== status) return false;
-
-    // 🔥 FILTRO INTELIGENTE
-    if (hor) {
-      if (a.modalidade === "musculacao" && a.horario !== hor) return false;
-
-      if (a.modalidade === "funcional" && a.turma !== hor) return false;
-    }
-
-    return true;
-  });
-
-  const tbody = document.getElementById("alunos-tbody");
-
-  document.getElementById("alunos-empty").style.display = list.length
-    ? "none"
-    : "block";
-
-  tbody.innerHTML = list
-    .map((a) => {
-      const idx = alunos.indexOf(a);
-
-      const dias = diasAteVencer(a.vencimento);
-
-      let vencLabel = fmtDate(a.vencimento);
-      let vencColor = "var(--muted)";
-
-      if (dias < 0) {
-        vencLabel = `Vencido ${Math.abs(dias)}d`;
-        vencColor = "var(--danger)";
-      }
-
-      if (dias === 0) {
-        vencLabel = "Vence HOJE";
-        vencColor = "var(--gold)";
-      }
-
-      if (dias > 0 && dias <= 3) {
-        vencLabel = `Vence em ${dias}d`;
-        vencColor = "var(--gold)";
-      }
-
-      const horario =
-        a.modalidade === "funcional"
-          ? turmaLabel[a.turma] || a.turma
-          : a.horario || "-";
-
-      return `
-
-<tr>
-
-<td class="td-name">
-${a.nome}
-<small>${a.tel} · ${a.email}</small>
-</td>
-
-<td>
-${a.modalidade === "musculacao" ? "Musculação" : "Funcional"}
-</td>
-
-<td>
-${horario}
-</td>
-
-<td style="color:${vencColor}">
-${vencLabel}
-</td>
-
-<td>
-${statusBadge[calcularStatusAluno(a)]}
-</td>
-
-<td>
-
-<button class="icon-btn" onclick="abrirModalPagamento(${idx})">
-<i class="bi bi-cash"></i>
-</button>
-
-<button class="icon-btn"
-onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')">
-<i class="bi bi-whatsapp"></i>
-</button>
-
-<button class="icon-btn" onclick="editAluno(${idx})">
-<i class="bi bi-pencil-square"></i>
-</button>
-
-<button class="icon-btn" onclick="deleteAluno(${idx})">
-<i class="bi bi-trash"></i>
-</button>
-
-</td>
-
-</tr>
-
-`;
-    })
-    .join("");
-}
 function calcularStatusAluno(a) {
   const dias = diasAteVencer(a.vencimento);
 
@@ -1362,17 +1251,22 @@ async function saveAluno() {
 
   const telFormatado = numeroLimpo.replace(
     /^(\d{2})(\d{5})(\d{4})$/,
-    "($1) $2-$3",
+    "($1) $2-$3"
   );
+
+  // ===== EMAIL OPCIONAL =====
+  let emailPadrao = "";
 
   const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!emailValido.test(emailInput)) {
-    showToast("Email inválido.", "error");
-    return;
-  }
+  if (emailInput) {
+    if (!emailValido.test(emailInput)) {
+      showToast("Email inválido.", "error");
+      return;
+    }
 
-  const emailPadrao = emailInput.toLowerCase();
+    emailPadrao = emailInput.toLowerCase();
+  }
 
   const modalidade = document.getElementById("f-modal").value;
   if (!modalidade) {
@@ -1382,6 +1276,7 @@ async function saveAluno() {
 
   const snap = await getDocs(collection(db, "alunos"));
 
+  // ===== TELEFONE DUPLICADO =====
   const telefoneDuplicado = snap.docs.find((docSnap) => {
     if (editingId !== null && docSnap.id === alunos[editingId].id) return false;
 
@@ -1394,15 +1289,19 @@ async function saveAluno() {
     return;
   }
 
-  const emailDuplicado = snap.docs.find((docSnap) => {
-    if (editingId !== null && docSnap.id === alunos[editingId].id) return false;
+  // ===== EMAIL DUPLICADO (só se existir) =====
+  if (emailPadrao) {
+    const emailDuplicado = snap.docs.find((docSnap) => {
+      if (editingId !== null && docSnap.id === alunos[editingId].id)
+        return false;
 
-    return docSnap.data().email.toLowerCase() === emailPadrao;
-  });
+      return (docSnap.data().email || "").toLowerCase() === emailPadrao;
+    });
 
-  if (emailDuplicado) {
-    showToast("Já existe um aluno com esse email.", "error");
-    return;
+    if (emailDuplicado) {
+      showToast("Já existe um aluno com esse email.", "error");
+      return;
+    }
   }
 
   const aluno = {
@@ -1420,7 +1319,6 @@ async function saveAluno() {
     responsavel: "Rodrigo Pedroso",
     status: document.getElementById("f-status").value,
     statusAval: editingId !== null ? alunos[editingId].statusAval : "Pendente",
-
     dataEntrada: new Date().toISOString().slice(0, 10),
   };
 
@@ -1439,6 +1337,120 @@ async function saveAluno() {
     showToast("Erro ao salvar aluno.", "error");
   }
 }
+
+function renderAlunos() {
+  const q = document.getElementById("search-aluno").value.toLowerCase();
+  const modal = document.getElementById("filter-modal").value;
+  const status = document.getElementById("filter-status").value;
+
+  const horEl = document.getElementById("filter-horario");
+  const hor = horEl ? horEl.value : "";
+
+  let list = alunos.filter((a) => {
+    if (q && !a.nome.toLowerCase().includes(q)) return false;
+
+    if (modal && a.modalidade !== modal) return false;
+
+    if (status && calcularStatusAluno(a) !== status) return false;
+
+    // 🔥 FILTRO INTELIGENTE
+    if (hor) {
+      if (a.modalidade === "musculacao" && a.horario !== hor) return false;
+
+      if (a.modalidade === "funcional" && a.turma !== hor) return false;
+    }
+
+    return true;
+  });
+
+  const tbody = document.getElementById("alunos-tbody");
+
+  document.getElementById("alunos-empty").style.display = list.length
+    ? "none"
+    : "block";
+
+  tbody.innerHTML = list
+    .map((a) => {
+      const idx = alunos.indexOf(a);
+
+      const dias = diasAteVencer(a.vencimento);
+
+      let vencLabel = fmtDate(a.vencimento);
+      let vencColor = "var(--muted)";
+
+      if (dias < 0) {
+        vencLabel = `Vencido ${Math.abs(dias)}d`;
+        vencColor = "var(--danger)";
+      }
+
+      if (dias === 0) {
+        vencLabel = "Vence HOJE";
+        vencColor = "var(--gold)";
+      }
+
+      if (dias > 0 && dias <= 3) {
+        vencLabel = `Vence em ${dias}d`;
+        vencColor = "var(--gold)";
+      }
+
+      const horario =
+        a.modalidade === "funcional"
+          ? turmaLabel[a.turma] || a.turma
+          : a.horario || "-";
+
+      return `
+
+<tr>
+
+<td class="td-name">
+${a.nome}
+<small>${a.tel}${a.email ? " · " + a.email : ""}</small>
+</td>
+
+<td>
+${a.modalidade === "musculacao" ? "Musculação" : "Funcional"}
+</td>
+
+<td>
+${horario}
+</td>
+
+<td style="color:${vencColor}">
+${vencLabel}
+</td>
+
+<td>
+${statusBadge[calcularStatusAluno(a)]}
+</td>
+
+<td>
+
+<button class="icon-btn" onclick="abrirModalPagamento(${idx})">
+<i class="bi bi-cash"></i>
+</button>
+
+<button class="icon-btn"
+onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')">
+<i class="bi bi-whatsapp"></i>
+</button>
+
+<button class="icon-btn" onclick="editAluno(${idx})">
+<i class="bi bi-pencil-square"></i>
+</button>
+
+<button class="icon-btn" onclick="deleteAluno(${idx})">
+<i class="bi bi-trash"></i>
+</button>
+
+</td>
+
+</tr>
+
+`;
+    })
+    .join("");
+}
+
 
 async function registrarPagamento(idx, mesSelecionado = null) {
   const aluno = alunos[idx];
