@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap');
 :root {
   --bg: #0a0a0f;
   --surface: #12121a;
@@ -20,7 +21,7 @@
 }
 
 body {
-  font-family: 'DM Sans', sans-serif;
+  font-family: 'Outfit', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
@@ -203,13 +204,15 @@ background:#ef444455;
 }
 
 .search-icon,
-.select-icon {
+.select-wrapper i {
   position: absolute;
   left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 14px;
   color: var(--muted);
+  pointer-events: none;
 }
-
 
 
 .logo h1 {
@@ -949,6 +952,16 @@ tr:hover td {
   transform: translateY(0);
 }
 
+.menu-toggle{
+  display:none;
+  background:none;
+  border:none;
+  color:var(--text);
+  font-size:1.6rem;
+  cursor:pointer;
+  margin-right:10px;
+}
+
 .toast.success {
   background: #16a34a;
 }
@@ -1022,4 +1035,88 @@ tr:hover td {
 .footer-content strong {
   color: #fff;
   font-weight: 600;
+}
+
+/* ═══════════════════════════════
+   RESPONSIVO
+═══════════════════════════════ */
+
+/* NOTEBOOKS MENORES */
+@media (max-width: 1100px){
+
+  .stats-grid{
+    grid-template-columns: repeat(2,1fr);
+  }
+
+  .dash-grid{
+    grid-template-columns: 1fr;
+  }
+
+  .turma-grid{
+    grid-template-columns: repeat(2,1fr);
+  }
+
+}
+
+
+/* TABLETS */
+@media (max-width: 860px){
+
+  .sidebar{
+    width: 200px;
+  }
+
+  .main{
+    margin-left:200px;
+  }
+
+  .app-footer{
+    left:200px;
+  }
+
+  .topbar{
+    padding:16px 20px;
+  }
+
+  .content{
+    padding:22px 20px;
+  }
+
+  .filters{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .search-input{
+    max-width:100%;
+  }
+
+}
+
+
+@media (max-width:600px){
+
+  .menu-toggle{
+    display:block;
+  }
+
+  .sidebar{
+    transform:translateX(-100%);
+    transition:0.3s;
+    position:fixed;
+    z-index:200;
+  }
+
+  .sidebar.open{
+    transform:translateX(0);
+  }
+
+  .main{
+    margin-left:0;
+  }
+
+  .app-footer{
+    left:0;
+  }
+
 }

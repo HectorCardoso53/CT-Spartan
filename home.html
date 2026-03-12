@@ -59,6 +59,9 @@
     <!-- MAIN -->
     <div class="main">
         <div class="topbar">
+            <button class="menu-toggle" onclick="toggleMenu()">
+                <i class="bi bi-list"></i>
+            </button>
             <h2 id="page-title">Dashboard</h2>
             <div class="topbar-actions">
                 <div class="notif-bell" onclick="navigate('alertas')">
@@ -173,7 +176,7 @@
                     </div>
                 </div>
 
-                
+
 
 
             </div>
@@ -231,6 +234,7 @@
                                 <tr>
                                     <th>Aluno</th>
                                     <th>Modalidade</th>
+                                    <th>Valor</th>
                                     <th>Turma / Horário</th>
                                     <th>Vencimento</th>
                                     <th>Status</th>
@@ -486,17 +490,17 @@
                     </div>
 
                     <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" id="f-email" class="form-input">
-                    </div>
-
-                    <div class="form-group">
                         <label>Modalidade</label>
                         <select id="f-modal" class="form-select" onchange="onModalChange()">
                             <option value="">Selecione</option>
                             <option value="musculacao">Musculação</option>
                             <option value="funcional">Funcional</option>
                         </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Valor da Mensalidade</label>
+                        <input type="text" id="f-valor" class="form-input" placeholder="R$ 0,00">
                     </div>
 
                     <div class="form-group" id="f-turma-group" style="display:none">
@@ -571,7 +575,7 @@
 
                     <div class="form-group">
                         <label>Valor</label>
-                        <input type="text" id="p-valor" class="form-input" disabled>
+                        <input type="text" id="p-valor" class="form-input">
                     </div>
 
                     <div class="form-group">

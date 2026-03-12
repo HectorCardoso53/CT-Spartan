@@ -67,7 +67,7 @@ function renderPagamentos() {
   });
 
   document.getElementById("fat-mes").textContent =
-    "R$ " + total.toLocaleString("pt-BR");
+    "R$ " + total.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
   // ===== TABELA =====
 
@@ -106,6 +106,28 @@ ${fmtDate(p.data)}
   document.getElementById("pagamentos-empty").style.display = list.length
     ? "none"
     : "block";
+}
+
+const valorPagamento = document.getElementById("p-valor");
+
+if (valorPagamento) {
+  valorPagamento.addEventListener("input", function (e) {
+
+    let value = e.target.value.replace(/\D/g, "");
+
+    if (!value) {
+      e.target.value = "";
+      return;
+    }
+
+    value = (parseInt(value) / 100).toFixed(2);
+
+    value = value
+      .replace(".", ",")
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+    e.target.value = "R$ " + value;
+  });
 }
 
 async function carregarAlunos() {
@@ -179,6 +201,13 @@ function navigate(page) {
   if (page === "avaliacoes") renderAvaliacoes();
   if (page === "alertas") renderAlertas();
   if (page === "pagamentos") carregarPagamentos();
+
+  // 🔥 FECHA MENU MOBILE
+  const sidebar = document.querySelector(".sidebar");
+
+  if (window.innerWidth <= 600) {
+    sidebar.classList.remove("open");
+  }
 }
 
 // ===== UTILS =====
@@ -468,7 +497,6 @@ function renderDashboard() {
       `,
     )
     .join("");
-
 }
 
 // ===== ALUNOS =====
@@ -499,7 +527,6 @@ function populateHorarioFilter() {
       .join("");
 }
 
-
 function calcularStatusAluno(a) {
   const dias = diasAteVencer(a.vencimento);
 
@@ -520,9 +547,10 @@ function abrirModalPagamento(idx) {
   document.getElementById("p-modalidade").value =
     aluno.modalidade === "funcional" ? "Funcional" : "Musculação";
 
-  const valor = aluno.modalidade === "funcional" ? 75 : 200;
+  const valor = aluno.valor;
 
-  document.getElementById("p-valor").value = "R$ " + valor;
+  document.getElementById("p-valor").value =
+  "R$ " + Number(valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
   document.getElementById("p-data").value = new Date()
     .toISOString()
@@ -543,19 +571,36 @@ async function confirmarPagamento() {
 
   const mes = document.getElementById("p-mes").value;
   const data = document.getElementById("p-data").value;
+  const valorStr = document.getElementById("p-valor").value;
 
   if (!mes) {
     showToast("Selecione o mês", "error");
     return;
   }
 
-  const valor = pagamentoAluno.modalidade === "funcional" ? 75 : 200;
+  if (!valorStr) {
+    showToast("Informe o valor do pagamento", "error");
+    return;
+  }
+
+  // 🔥 converte "R$ 180,00" → 180
+  const valor = Number(
+    valorStr
+      .replace("R$", "")
+      .replace(/\./g, "")
+      .replace(",", ".")
+  );
+
+  if (!valor || valor <= 0) {
+    showToast("Valor inválido", "error");
+    return;
+  }
 
   // 🔴 VERIFICA DUPLICADO
   const q = query(
     collection(db, "pagamentos"),
     where("alunoId", "==", pagamentoAluno.id),
-    where("mes", "==", mes),
+    where("mes", "==", mes)
   );
 
   const snap = await getDocs(q);
@@ -565,7 +610,7 @@ async function confirmarPagamento() {
     return;
   }
 
-  // ✅ SALVA
+  // ✅ SALVA PAGAMENTO
   await addDoc(collection(db, "pagamentos"), {
     alunoId: pagamentoAluno.id,
     nome: pagamentoAluno.nome,
@@ -579,6 +624,7 @@ async function confirmarPagamento() {
     data: data,
   });
 
+  // 🔥 calcula próximo vencimento
   const prox = new Date(pagamentoAluno.vencimento);
   prox.setMonth(prox.getMonth() + 1);
 
@@ -866,7 +912,7 @@ function renderAlunosFiltrados(lista) {
       return `<tr>
         <td class="td-name">
           ${a.nome}
-          <small>${a.tel} · ${a.email}</small>
+          <small>${a.tel}</small>
         </td>
         <td>${horLabel}</td>
         <td style="color:${vencColor}">
@@ -883,6 +929,25 @@ function renderAlunosFiltrados(lista) {
     })
     .join("");
 }
+
+function toggleMenu(){
+  const sidebar = document.querySelector(".sidebar");
+  sidebar.classList.toggle("open");
+}
+
+window.toggleMenu = toggleMenu;
+
+document.addEventListener("click", function(e){
+
+  const sidebar = document.querySelector(".sidebar");
+  const toggle = document.querySelector(".menu-toggle");
+
+  if(!sidebar.contains(e.target) && !toggle.contains(e.target)){
+    sidebar.classList.remove("open");
+  }
+
+});
+
 
 // ===== ALERTAS =====
 function renderAlertas() {
@@ -1045,6 +1110,7 @@ function renderAlertas() {
 }
 
 // ===== MODAL =====
+// ===== MODAL =====
 function openModal(idx = null) {
   editingId = idx;
 
@@ -1056,10 +1122,17 @@ function openModal(idx = null) {
 
     document.getElementById("f-nome").value = a.nome;
     document.getElementById("f-tel").value = a.tel;
-    document.getElementById("f-email").value = a.email;
     document.getElementById("f-modal").value = a.modalidade;
-    document.getElementById("f-turma").value = a.turma;
-    document.getElementById("f-horario").value = a.horario;
+
+    // 🔥 VALOR DA MENSALIDADE
+    document.getElementById("f-valor").value =
+      "R$ " +
+      Number(a.valor || 0).toLocaleString("pt-BR", {
+        minimumFractionDigits: 2,
+      });
+
+    document.getElementById("f-turma").value = a.turma || "";
+    document.getElementById("f-horario").value = a.horario || "";
     document.getElementById("f-venc").value = a.vencimento;
     document.getElementById("f-aval").value = a.avaliacao;
     document.getElementById("f-status").value = a.status;
@@ -1068,8 +1141,11 @@ function openModal(idx = null) {
   } else {
     document.getElementById("f-nome").value = "";
     document.getElementById("f-tel").value = "";
-    document.getElementById("f-email").value = "";
     document.getElementById("f-modal").value = "";
+
+    // 🔥 LIMPA VALOR
+    document.getElementById("f-valor").value = "";
+
     document.getElementById("f-horario").value = "15:00";
     document.getElementById("f-venc").value = daysFromNow(30);
     document.getElementById("f-aval").value = daysFromNow(90);
@@ -1079,6 +1155,25 @@ function openModal(idx = null) {
   }
 
   document.getElementById("modal-backdrop").classList.add("open");
+}
+
+const valorInput = document.getElementById("f-valor");
+
+if (valorInput) {
+  valorInput.addEventListener("input", function (e) {
+    let value = e.target.value.replace(/\D/g, "");
+
+    if (!value) {
+      e.target.value = "";
+      return;
+    }
+
+    value = (parseInt(value) / 100).toFixed(2);
+
+    value = value.replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+    e.target.value = "R$ " + value;
+  });
 }
 
 function openWhatsApp(tel, nome, vencimento) {
@@ -1175,7 +1270,7 @@ function gerarLinhaAluno(a) {
   return `<tr>
     <td class="td-name">
       ${a.nome}
-      <small>${a.tel} · ${a.email}</small>
+      <small>${a.tel}</small>
     </td>
     <td>${a.modalidade}</td>
     <td>${horLabel}</td>
@@ -1234,13 +1329,13 @@ function editAluno(idx) {
 
 async function saveAluno() {
   const nome = document.getElementById("f-nome").value.trim();
+
   if (!nome) {
     showToast("Informe o nome do aluno.", "error");
     return;
   }
 
   const telInput = document.getElementById("f-tel").value.trim();
-  const emailInput = document.getElementById("f-email").value.trim();
 
   const numeroLimpo = telInput.replace(/\D/g, "");
 
@@ -1254,23 +1349,30 @@ async function saveAluno() {
     "($1) $2-$3"
   );
 
-  // ===== EMAIL OPCIONAL =====
-  let emailPadrao = "";
-
-  const emailValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-  if (emailInput) {
-    if (!emailValido.test(emailInput)) {
-      showToast("Email inválido.", "error");
-      return;
-    }
-
-    emailPadrao = emailInput.toLowerCase();
-  }
-
   const modalidade = document.getElementById("f-modal").value;
+
   if (!modalidade) {
     showToast("Selecione a modalidade.", "error");
+    return;
+  }
+
+  // ===== VALOR DA MENSALIDADE =====
+  let valorStr = document.getElementById("f-valor").value;
+
+  if (!valorStr) {
+    showToast("Informe o valor da mensalidade.", "error");
+    return;
+  }
+
+  const valor = Number(
+    valorStr
+      .replace("R$", "")
+      .replace(/\./g, "")
+      .replace(",", ".")
+  );
+
+  if (!valor || valor <= 0) {
+    showToast("Valor da mensalidade inválido.", "error");
     return;
   }
 
@@ -1289,36 +1391,31 @@ async function saveAluno() {
     return;
   }
 
-  // ===== EMAIL DUPLICADO (só se existir) =====
-  if (emailPadrao) {
-    const emailDuplicado = snap.docs.find((docSnap) => {
-      if (editingId !== null && docSnap.id === alunos[editingId].id)
-        return false;
-
-      return (docSnap.data().email || "").toLowerCase() === emailPadrao;
-    });
-
-    if (emailDuplicado) {
-      showToast("Já existe um aluno com esse email.", "error");
-      return;
-    }
-  }
-
   const aluno = {
     nome,
     tel: telFormatado,
-    email: emailPadrao,
     modalidade,
+
+    valor, // 🔥 agora o valor é salvo
+
     turma:
       modalidade === "funcional"
         ? document.getElementById("f-turma").value
         : null,
+
     horario: document.getElementById("f-horario").value,
+
     vencimento: document.getElementById("f-venc").value,
     avaliacao: document.getElementById("f-aval").value,
+
     responsavel: "Rodrigo Pedroso",
+
     status: document.getElementById("f-status").value,
-    statusAval: editingId !== null ? alunos[editingId].statusAval : "Pendente",
+
+    statusAval: editingId !== null
+      ? alunos[editingId].statusAval
+      : "Pendente",
+
     dataEntrada: new Date().toISOString().slice(0, 10),
   };
 
@@ -1332,6 +1429,7 @@ async function saveAluno() {
     closeModal();
     carregarAlunos();
     showToast("Aluno salvo com sucesso!", "success");
+
   } catch (error) {
     console.error("Erro ao salvar:", error);
     showToast("Erro ao salvar aluno.", "error");
@@ -1404,11 +1502,14 @@ function renderAlunos() {
 
 <td class="td-name">
 ${a.nome}
-<small>${a.tel}${a.email ? " · " + a.email : ""}</small>
+<small>${a.tel}</small>
 </td>
 
 <td>
 ${a.modalidade === "musculacao" ? "Musculação" : "Funcional"}
+</td>
+<td>
+R$ ${Number(a.valor || 0).toLocaleString("pt-BR", {minimumFractionDigits:2})}
 </td>
 
 <td>
@@ -1451,7 +1552,6 @@ onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')">
     .join("");
 }
 
-
 async function registrarPagamento(idx, mesSelecionado = null) {
   const aluno = alunos[idx];
 
@@ -1460,7 +1560,7 @@ async function registrarPagamento(idx, mesSelecionado = null) {
   const mes = mesSelecionado || hoje.toISOString().slice(0, 7);
   const data = hoje.toISOString().slice(0, 10);
 
-  const valor = aluno.modalidade === "funcional" ? 75 : 200;
+  const valor = aluno.valor;
 
   // salva pagamento
   await addDoc(collection(db, "pagamentos"), {
