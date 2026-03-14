@@ -314,10 +314,11 @@ function renderDashboard() {
   document.getElementById("leg-musc").textContent = musc;
   document.getElementById("leg-func").textContent = func;
 
-  document.getElementById("leg-atr").textContent = alunos.filter(
-    (a) => a.status === "Atrasado",
-  ).length;
+const atrasados = alunos.filter(
+  (a) => calcularStatusAluno(a) === "Atrasado"
+).length;
 
+document.getElementById("leg-atr").textContent = atrasados;
   // ===== DONUT =====
 
   const total = alunos.length || 1;
