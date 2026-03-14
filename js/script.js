@@ -667,6 +667,9 @@ async function deleteAluno(idx) {
 
 // ===== TURMAS =====
 function renderTurmas() {
+
+  const CAPACIDADE_TURMA = 50;
+
   const funcTurmas = [
     { id: "manha-06", label: "Turma 1 – Manhã", time: "06:00 – 07:00" },
     { id: "noite-19", label: "Turma 2 – Noite", time: "19:00 – 20:00" },
@@ -676,9 +679,12 @@ function renderTurmas() {
   // ===== FUNCIONAL =====
   document.getElementById("turma-funcional").innerHTML = funcTurmas
     .map((t) => {
+
       const count = alunos.filter(
-        (a) => a.modalidade === "funcional" && a.turma === t.id,
+        (a) => a.modalidade === "funcional" && a.turma === t.id
       ).length;
+
+      const vagas = CAPACIDADE_TURMA - count;
 
       return `
       <div class="turma-card"
@@ -690,35 +696,44 @@ function renderTurmas() {
             <div class="turma-name">${t.label}</div>
             <div class="turma-time">${t.time}</div>
           </div>
+
           <span class="badge badge-gold">
             <i class="bi bi-lightning-charge-fill"></i>
           </span>
         </div>
 
         <div class="turma-count">
-          ${count} <small>alunos</small>
+          ${count} / ${CAPACIDADE_TURMA}
+          <small>alunos</small>
+        </div>
+
+        <div style="font-size:0.8rem;color:var(--muted)">
+          ${vagas} vagas disponíveis
         </div>
 
         <div style="margin-top:12px">
           <div class="progress-bar">
             <div class="progress-fill"
-              style="width:${Math.min((count / 20) * 100, 100)}%;
+              style="width:${Math.min((count / CAPACIDADE_TURMA) * 100, 100)}%;
                      background:var(--accent2)">
             </div>
           </div>
-          <small style="color:var(--muted)">Capacidade: 20</small>
         </div>
 
       </div>`;
     })
     .join("");
 
+
   // ===== MUSCULAÇÃO =====
   const muscHorarios = [
     ...new Set(
-      alunos.filter((a) => a.modalidade === "musculacao").map((a) => a.horario),
+      alunos
+        .filter((a) => a.modalidade === "musculacao")
+        .map((a) => a.horario)
     ),
   ].sort((a, b) => a.localeCompare(b));
+
 
   document.getElementById("turma-musculacao").innerHTML =
     muscHorarios.length === 0
@@ -732,9 +747,12 @@ function renderTurmas() {
       `
       : muscHorarios
           .map((h) => {
+
             const count = alunos.filter(
-              (a) => a.modalidade === "musculacao" && a.horario === h,
+              (a) => a.modalidade === "musculacao" && a.horario === h
             ).length;
+
+            const vagas = CAPACIDADE_TURMA - count;
 
             return `
             <div class="turma-card"
@@ -753,23 +771,26 @@ function renderTurmas() {
               </div>
 
               <div class="turma-count">
-                ${count} <small>alunos</small>
+                ${count} / ${CAPACIDADE_TURMA}
+                <small>alunos</small>
+              </div>
+
+              <div style="font-size:0.8rem;color:var(--muted)">
+                ${vagas} vagas disponíveis
               </div>
 
               <div style="margin-top:12px">
                 <div class="progress-bar">
                   <div class="progress-fill"
-                    style="width:${Math.min((count / 30) * 100, 100)}%">
+                    style="width:${Math.min((count / CAPACIDADE_TURMA) * 100, 100)}%">
                   </div>
                 </div>
-                <small style="color:var(--muted)">Fluxo: 30 max</small>
               </div>
 
             </div>`;
           })
           .join("");
 }
-
 // ===== AVALIACOES =====
 function renderAvaliacoes() {
   const q = document.getElementById("search-aval")?.value?.toLowerCase() || "";
@@ -1328,6 +1349,7 @@ function editAluno(idx) {
 }
 
 async function saveAluno() {
+
   const nome = document.getElementById("f-nome").value.trim();
 
   if (!nome) {
@@ -1336,7 +1358,6 @@ async function saveAluno() {
   }
 
   const telInput = document.getElementById("f-tel").value.trim();
-
   const numeroLimpo = telInput.replace(/\D/g, "");
 
   if (numeroLimpo.length !== 11) {
@@ -1356,7 +1377,7 @@ async function saveAluno() {
     return;
   }
 
-  // ===== VALOR DA MENSALIDADE =====
+  // ===== VALOR =====
   let valorStr = document.getElementById("f-valor").value;
 
   if (!valorStr) {
@@ -1376,14 +1397,42 @@ async function saveAluno() {
     return;
   }
 
+  const turma = document.getElementById("f-turma").value;
+  const horario = document.getElementById("f-horario").value;
+
+  // ===== LIMITAR 50 POR TURMA/HORÁRIO =====
+  const totalNaTurma = alunos.filter((a) => {
+
+    if (editingId !== null && a.id === alunos[editingId].id) return false;
+
+    if (modalidade === "funcional") {
+      return a.modalidade === "funcional" && a.turma === turma;
+    }
+
+    if (modalidade === "musculacao") {
+      return a.modalidade === "musculacao" && a.horario === horario;
+    }
+
+    return false;
+
+  }).length;
+
+  if (totalNaTurma >= 50) {
+    showToast("Esta turma/horário já atingiu o limite de 50 alunos.", "error");
+    return;
+  }
+
+  // ===== VERIFICA TELEFONE DUPLICADO =====
   const snap = await getDocs(collection(db, "alunos"));
 
-  // ===== TELEFONE DUPLICADO =====
   const telefoneDuplicado = snap.docs.find((docSnap) => {
+
     if (editingId !== null && docSnap.id === alunos[editingId].id) return false;
 
     const telBanco = docSnap.data().tel.replace(/\D/g, "");
+
     return telBanco === numeroLimpo;
+
   });
 
   if (telefoneDuplicado) {
@@ -1391,19 +1440,16 @@ async function saveAluno() {
     return;
   }
 
+  // ===== OBJETO ALUNO =====
   const aluno = {
     nome,
     tel: telFormatado,
     modalidade,
 
-    valor, // 🔥 agora o valor é salvo
+    valor,
 
-    turma:
-      modalidade === "funcional"
-        ? document.getElementById("f-turma").value
-        : null,
-
-    horario: document.getElementById("f-horario").value,
+    turma: modalidade === "funcional" ? turma : null,
+    horario: modalidade === "musculacao" ? horario : null,
 
     vencimento: document.getElementById("f-venc").value,
     avaliacao: document.getElementById("f-aval").value,
@@ -1420,20 +1466,29 @@ async function saveAluno() {
   };
 
   try {
+
     if (editingId !== null) {
+
       await updateDoc(doc(db, "alunos", alunos[editingId].id), aluno);
+
     } else {
+
       await addDoc(collection(db, "alunos"), aluno);
+
     }
 
     closeModal();
     carregarAlunos();
+
     showToast("Aluno salvo com sucesso!", "success");
 
   } catch (error) {
+
     console.error("Erro ao salvar:", error);
     showToast("Erro ao salvar aluno.", "error");
+
   }
+
 }
 
 function renderAlunos() {

@@ -275,18 +275,14 @@ background:#ef444455;
   font-size: 0.75rem;
 }
 
-.main {
-  margin-left: 240px;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
+.main{
+  margin-left:240px;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  padding-bottom:60px;
 }
 
-.content {
-  flex: 1;
-  padding: 28px 32px;
-  padding-bottom: 80px; /* espaço pro footer fixo */
-}
 
 .topbar {
   padding: 20px 32px;
@@ -374,8 +370,10 @@ background:#ef444455;
   color: var(--blue);
 }
 
-.content {
-  padding: 28px 32px;
+.content{
+  flex:1;
+  padding:28px 32px;
+  padding-bottom:160px;
 }
 
 /* PAGE SECTIONS */
@@ -802,11 +800,10 @@ tr:hover td {
   background: var(--surface2);
 }
 
-/* TURMAS */
-.turma-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+.turma-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+  gap:16px;
 }
 
 .turma-card {
@@ -1111,6 +1108,25 @@ tr:hover td {
     transform:translateX(0);
   }
 
+   .dash-grid{
+    grid-template-columns: 1fr;
+    gap:16px;
+  }
+
+  .card{
+    padding:18px;
+  }
+
+
+  .bar-chart{
+    height:100px;
+    gap:6px;
+  }
+
+  .bar-label{
+    font-size:0.65rem;
+  }
+
   .main{
     margin-left:0;
   }
@@ -1120,7 +1136,7 @@ tr:hover td {
     height:auto;
     padding:10px 16px;
   }
-
+/*teste*/
   .footer-content{
     flex-direction:column;
     align-items:center;
