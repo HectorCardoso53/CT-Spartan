@@ -31,6 +31,24 @@ async function carregarPagamentos() {
   renderPagamentos();
 }
 
+function calcularIdade(dataNasc) {
+  if (!dataNasc) return "-";
+
+  const hoje = new Date();
+  const [y, m, d] = dataNasc.split("-").map(Number);
+
+  let idade = hoje.getFullYear() - y;
+
+  if (
+    hoje.getMonth() + 1 < m ||
+    (hoje.getMonth() + 1 === m && hoje.getDate() < d)
+  ) {
+    idade--;
+  }
+
+  return idade;
+}
+
 function renderPagamentos() {
   const q =
     document.getElementById("search-pagamento")?.value?.toLowerCase() || "";
@@ -46,20 +64,14 @@ function renderPagamentos() {
       if (!alunoExiste) return false;
     }
 
-    // filtro nome
     if (q && !p.nome.toLowerCase().includes(q)) return false;
-
-    // filtro mês
     if (mesFiltro && p.mes !== mesFiltro) return false;
-
-    // filtro modalidade
     if (modalFiltro && p.modalidade !== modalFiltro) return false;
 
     return true;
   });
 
   // ===== FATURAMENTO =====
-
   let total = 0;
 
   list.forEach((p) => {
@@ -70,15 +82,22 @@ function renderPagamentos() {
     "R$ " + total.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
   // ===== TABELA =====
-
   document.getElementById("pagamentos-tbody").innerHTML = list
-    .map(
-      (p) => `
+    .map((p) => {
 
+      // 🔥 BUSCA O ALUNO CERTO
+      const aluno = alunos.find((a) => a.id === p.alunoId);
+
+      return `
 <tr>
 
 <td class="td-name">
 ${p.nome}
+</td>
+
+<td>
+${aluno?.nascimento ? fmtDate(aluno.nascimento) : "-"}<br>
+<small>${aluno?.nascimento ? calcularIdade(aluno.nascimento) + " anos" : ""}</small>
 </td>
 
 <td>
@@ -90,7 +109,7 @@ ${p.mes}
 </td>
 
 <td>
-R$ ${p.valor}
+R$ ${Number(p.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
 </td>
 
 <td>
@@ -98,9 +117,8 @@ ${fmtDate(p.data)}
 </td>
 
 </tr>
-
-`,
-    )
+`;
+    })
     .join("");
 
   document.getElementById("pagamentos-empty").style.display = list.length
@@ -971,165 +989,6 @@ document.addEventListener("click", function(e){
 });
 
 
-// ===== ALERTAS =====
-function renderAlertas() {
-  // ===============================
-  // PLANOS VENCIDOS
-  // ===============================
-  const venc = alunos.filter((a) => diasAteVencer(a.vencimento) < 0);
-
-  document.getElementById("alertas-vencidos").innerHTML = venc.length
-    ? venc
-        .map((a) => {
-          const d = Math.abs(diasAteVencer(a.vencimento));
-
-          return `<div class="alert-item">
-            <div class="alert-avatar" style="background:#ef444420;color:#ef4444">
-              ${iniciais(a.nome)}
-            </div>
-
-            <div class="alert-info">
-              <strong>${a.nome}</strong>
-              <small>
-                ${
-                  a.modalidade === "musculacao"
-                    ? `<i class="bi bi-barbell"></i> Musculação`
-                    : `<i class="bi bi-lightning-charge-fill"></i> Funcional`
-                }
-                · ${a.horario}
-              </small>
-            </div>
-
-            <div style="text-align:right">
-              <div style="color:var(--danger);font-size:0.85rem">
-                <i class="bi bi-exclamation-triangle-fill"></i>
-                Vencido há ${d} dia(s)
-              </div>
-              <small style="color:var(--muted)">
-                <i class="bi bi-calendar-event"></i>
-                ${fmtDate(a.vencimento)}
-              </small>
-            </div>
-
-            
-          </div>`;
-        })
-        .join("")
-    : `
-      <div class="empty">
-        <div class="empty-icon">
-          <i class="bi bi-check-circle-fill" style="color:var(--green);"></i>
-        </div>
-        <div>Nenhum plano vencido</div>
-      </div>
-    `;
-
-  // ===============================
-  // PRÓXIMOS 7 DIAS
-  // ===============================
-  const prox = alunos.filter((a) => {
-    const d = diasAteVencer(a.vencimento);
-    return d >= 0 && d <= 7;
-  });
-
-  document.getElementById("alertas-proximos").innerHTML = prox.length
-    ? prox
-        .map((a) => {
-          const d = diasAteVencer(a.vencimento);
-
-          return `<div class="alert-item">
-          <div class="alert-avatar" style="background:#f5a62320;color:#f5a623">
-            ${iniciais(a.nome)}
-          </div>
-
-          <div class="alert-info">
-            <strong>${a.nome}</strong>
-            <small>
-              ${
-                a.modalidade === "musculacao"
-                  ? `<i class="bi bi-barbell"></i> Musculação`
-                  : `<i class="bi bi-lightning-charge-fill"></i> Funcional`
-              }
-              · ${a.horario}
-            </small>
-          </div>
-
-          <div style="text-align:right">
-            <div style="color:var(--gold);font-size:0.85rem">
-              <i class="bi bi-hourglass-split"></i>
-              ${d === 0 ? "Vence HOJE" : `Vence em ${d} dia(s)`}
-            </div>
-            <small style="color:var(--muted)">
-              <i class="bi bi-calendar-event"></i>
-              ${fmtDate(a.vencimento)}
-            </small>
-          </div>
-
-        </div>`;
-        })
-        .join("")
-    : `
-    <div class="empty">
-      <div class="empty-icon">
-        <i class="bi bi-emoji-smile"></i>
-      </div>
-      <div>Nenhum vencendo em breve</div>
-    </div>
-  `;
-
-  // ===============================
-  // AVALIAÇÕES PENDENTES
-  // ===============================
-  const avals = alunos.filter(
-    (a) => a.statusAval === "Pendente" && diasAteVencer(a.avaliacao) <= 5,
-  );
-
-  document.getElementById("alertas-avals").innerHTML = avals.length
-    ? avals
-        .map((a) => {
-          const d = diasAteVencer(a.avaliacao);
-
-          return `<div class="alert-item">
-            <div class="alert-avatar" style="background:#3b82f620;color:#3b82f6">
-              ${iniciais(a.nome)}
-            </div>
-
-            <div class="alert-info">
-              <strong>${a.nome}</strong>
-              <small>
-                <i class="bi bi-person-badge"></i>
-                Resp: ${a.responsavel}
-              </small>
-            </div>
-
-            <div style="text-align:right">
-              <div style="color:var(--blue);font-size:0.85rem">
-                <i class="bi bi-clipboard2-pulse-fill"></i>
-                ${
-                  d < 0
-                    ? `Atrasada ${Math.abs(d)} dia(s)`
-                    : d === 0
-                      ? "Hoje"
-                      : `Em ${d} dia(s)`
-                }
-              </div>
-              <small style="color:var(--muted)">
-                <i class="bi bi-calendar-event"></i>
-                ${fmtDate(a.avaliacao)}
-              </small>
-            </div>
-          </div>`;
-        })
-        .join("")
-    : `
-      <div class="empty">
-        <div class="empty-icon">
-          <i class="bi bi-clipboard-check-fill"></i>
-        </div>
-        <div>Sem avaliações pendentes próximas</div>
-      </div>
-    `;
-}
 
 // ===== MODAL =====
 // ===== MODAL =====
@@ -1144,6 +1003,7 @@ function openModal(idx = null) {
 
     document.getElementById("f-nome").value = a.nome;
     document.getElementById("f-tel").value = a.tel;
+    document.getElementById("f-nascimento").value = a.nascimento || "";
     document.getElementById("f-modal").value = a.modalidade;
 
     // 🔥 VALOR DA MENSALIDADE
@@ -1163,6 +1023,7 @@ function openModal(idx = null) {
   } else {
     document.getElementById("f-nome").value = "";
     document.getElementById("f-tel").value = "";
+    document.getElementById("f-nascimento").value = "";
     document.getElementById("f-modal").value = "";
 
     // 🔥 LIMPA VALOR
@@ -1371,6 +1232,14 @@ async function saveAluno() {
     "($1) $2-$3"
   );
 
+const nascimento = document.getElementById("f-nascimento").value;
+
+if (!nascimento) {
+  showToast("Informe a data de nascimento.", "error");
+  return;
+}
+
+
   const modalidade = document.getElementById("f-modal").value;
 
   if (!modalidade) {
@@ -1449,6 +1318,8 @@ async function saveAluno() {
 
     valor,
 
+    nascimento,
+
     turma: modalidade === "funcional" ? turma : null,
     horario: modalidade === "musculacao" ? horario : null,
 
@@ -1507,10 +1378,8 @@ function renderAlunos() {
 
     if (status && calcularStatusAluno(a) !== status) return false;
 
-    // 🔥 FILTRO INTELIGENTE
     if (hor) {
       if (a.modalidade === "musculacao" && a.horario !== hor) return false;
-
       if (a.modalidade === "funcional" && a.turma !== hor) return false;
     }
 
@@ -1553,56 +1422,64 @@ function renderAlunos() {
           : a.horario || "-";
 
       return `
-
 <tr>
 
 <td class="td-name">
-${a.nome}
-<small>${a.tel}</small>
+  ${a.nome}
+  <small>${a.tel}</small>
 </td>
 
 <td>
-${a.modalidade === "musculacao" ? "Musculação" : "Funcional"}
-</td>
-<td>
-R$ ${Number(a.valor || 0).toLocaleString("pt-BR", {minimumFractionDigits:2})}
+  ${a.nascimento ? fmtDate(a.nascimento) : "-"}<br>
+  <small>
+    ${a.nascimento ? calcularIdade(a.nascimento) + " anos" : ""}
+  </small>
 </td>
 
 <td>
-${horario}
+  ${a.modalidade === "musculacao" ? "Musculação" : "Funcional"}
+</td>
+
+<td>
+  R$ ${Number(a.valor || 0).toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+  })}
+</td>
+
+<td>
+  ${horario}
 </td>
 
 <td style="color:${vencColor}">
-${vencLabel}
+  ${vencLabel}
 </td>
 
 <td>
-${statusBadge[calcularStatusAluno(a)]}
+  ${statusBadge[calcularStatusAluno(a)]}
 </td>
 
 <td>
 
 <button class="icon-btn" onclick="abrirModalPagamento(${idx})">
-<i class="bi bi-cash"></i>
+  <i class="bi bi-cash"></i>
 </button>
 
 <button class="icon-btn"
 onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')">
-<i class="bi bi-whatsapp"></i>
+  <i class="bi bi-whatsapp"></i>
 </button>
 
 <button class="icon-btn" onclick="editAluno(${idx})">
-<i class="bi bi-pencil-square"></i>
+  <i class="bi bi-pencil-square"></i>
 </button>
 
 <button class="icon-btn" onclick="deleteAluno(${idx})">
-<i class="bi bi-trash"></i>
+  <i class="bi bi-trash"></i>
 </button>
 
 </td>
 
 </tr>
-
 `;
     })
     .join("");
@@ -1668,6 +1545,201 @@ function showToast(msg, type = "success") {
   }, 3000);
 }
 
+function diasParaAniversario(dataNasc) {
+  if (!dataNasc) return null;
+
+  const hoje = new Date();
+  const [ano, mes, dia] = dataNasc.split("-").map(Number);
+
+  let prox = new Date(hoje.getFullYear(), mes - 1, dia);
+
+  if (prox < hoje) {
+    prox = new Date(hoje.getFullYear() + 1, mes - 1, dia);
+  }
+
+  const diff = prox - hoje;
+
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
+}
+
+// ===== ALERTAS =====
+function renderAlertas() {
+
+  // ===============================
+  // PLANOS VENCIDOS
+  // ===============================
+  const venc = alunos.filter((a) => diasAteVencer(a.vencimento) < 0);
+
+  document.getElementById("alertas-vencidos").innerHTML = venc.length
+    ? venc.map((a) => {
+        const d = Math.abs(diasAteVencer(a.vencimento));
+
+        return `<div class="alert-item">
+          <div class="alert-avatar" style="background:#ef444420;color:#ef4444">
+            ${iniciais(a.nome)}
+          </div>
+
+          <div class="alert-info">
+            <strong>${a.nome}</strong>
+            <small>
+              ${a.modalidade === "musculacao"
+                ? `<i class="bi bi-barbell"></i> Musculação`
+                : `<i class="bi bi-lightning-charge-fill"></i> Funcional`}
+              · ${a.horario}
+            </small>
+          </div>
+
+          <div style="text-align:right">
+            <div style="color:var(--danger);font-size:0.85rem">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              Vencido há ${d} dia(s)
+            </div>
+            <small style="color:var(--muted)">
+              ${fmtDate(a.vencimento)}
+            </small>
+          </div>
+        </div>`;
+      }).join("")
+    : `<div class="empty">
+        <div class="empty-icon">
+          <i class="bi bi-check-circle-fill" style="color:var(--green);"></i>
+        </div>
+        <div>Nenhum plano vencido</div>
+      </div>`;
+
+  // ===============================
+  // PRÓXIMOS 7 DIAS
+  // ===============================
+  const prox = alunos.filter((a) => {
+    const d = diasAteVencer(a.vencimento);
+    return d >= 0 && d <= 7;
+  });
+
+  document.getElementById("alertas-proximos").innerHTML = prox.length
+    ? prox.map((a) => {
+        const d = diasAteVencer(a.vencimento);
+
+        return `<div class="alert-item">
+          <div class="alert-avatar" style="background:#f5a62320;color:#f5a623">
+            ${iniciais(a.nome)}
+          </div>
+
+          <div class="alert-info">
+            <strong>${a.nome}</strong>
+            <small>
+              ${a.modalidade === "musculacao"
+                ? `<i class="bi bi-barbell"></i> Musculação`
+                : `<i class="bi bi-lightning-charge-fill"></i> Funcional`}
+              · ${a.horario}
+            </small>
+          </div>
+
+          <div style="text-align:right">
+            <div style="color:var(--gold);font-size:0.85rem">
+              ${d === 0 ? "Vence HOJE" : `Vence em ${d} dia(s)`}
+            </div>
+            <small style="color:var(--muted)">
+              ${fmtDate(a.vencimento)}
+            </small>
+          </div>
+        </div>`;
+      }).join("")
+    : `<div class="empty">
+        <div class="empty-icon">
+          <i class="bi bi-emoji-smile"></i>
+        </div>
+        <div>Nenhum vencendo em breve</div>
+      </div>`;
+
+  // ===============================
+  // AVALIAÇÕES
+  // ===============================
+  const avals = alunos.filter(
+    (a) => a.statusAval === "Pendente" && diasAteVencer(a.avaliacao) <= 5
+  );
+
+  document.getElementById("alertas-avals").innerHTML = avals.length
+    ? avals.map((a) => {
+        const d = diasAteVencer(a.avaliacao);
+
+        return `<div class="alert-item">
+          <div class="alert-avatar" style="background:#3b82f620;color:#3b82f6">
+            ${iniciais(a.nome)}
+          </div>
+
+          <div class="alert-info">
+            <strong>${a.nome}</strong>
+            <small>Resp: ${a.responsavel}</small>
+          </div>
+
+          <div style="text-align:right">
+            <div style="color:var(--blue);font-size:0.85rem">
+              ${d < 0
+                ? `Atrasada ${Math.abs(d)} dia(s)`
+                : d === 0
+                ? "Hoje"
+                : `Em ${d} dia(s)`}
+            </div>
+            <small>${fmtDate(a.avaliacao)}</small>
+          </div>
+        </div>`;
+      }).join("")
+    : `<div class="empty">
+        <div class="empty-icon">
+          <i class="bi bi-clipboard-check-fill"></i>
+        </div>
+        <div>Sem avaliações pendentes próximas</div>
+      </div>`;
+
+  // ===============================
+  // ANIVERSARIANTES
+  // ===============================
+  let aniversariantes = alunos.filter((a) => {
+    const d = diasParaAniversario(a.nascimento);
+    return d !== null && d >= 0 && d <= 7;
+  });
+
+  // 🔥 ordena por proximidade
+  aniversariantes.sort(
+    (a, b) =>
+      diasParaAniversario(a.nascimento) -
+      diasParaAniversario(b.nascimento)
+  );
+
+  document.getElementById("alertas-aniversarios").innerHTML =
+    aniversariantes.length
+      ? aniversariantes.map((a) => {
+          const d = diasParaAniversario(a.nascimento);
+
+          return `<div class="alert-item">
+            <div class="alert-avatar" style="background:#22c55e20;color:#22c55e">
+              ${iniciais(a.nome)}
+            </div>
+
+            <div class="alert-info">
+              <strong>${a.nome}</strong>
+              <small>
+  <i class="bi bi-gift-fill" style="color:#22c55e;margin-right:4px;"></i>
+  ${
+    d === 0
+      ? "Aniversário HOJE!"
+      : `Em ${d} dia(s)`
+  }
+</small>
+            </div>
+
+            <div style="text-align:right">
+              <small>${fmtDate(a.nascimento)}</small>
+            </div>
+          </div>`;
+        }).join("")
+      : `<div class="empty">
+          <div class="empty-icon">
+            <i class="bi bi-emoji-smile"></i>
+          </div>
+          <div>Nenhum aniversário próximo</div>
+        </div>`;
+}
 carregarAlunos();
 
 window.navigate = navigate;
