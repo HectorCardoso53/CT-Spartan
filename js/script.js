@@ -1484,15 +1484,17 @@ function renderAlunos() {
 </td>
 
 <td>
+
+<button class="icon-btn" onclick="enviarInscricaoIdx(${idx})" title="Confirmar inscrição">
+    <i class="bi bi-person-check-fill"></i>
+  </button>
   <button class="icon-btn" onclick="abrirModalPagamento(${idx})" title="Registrar pagamento">
     <i class="bi bi-cash"></i>
   </button>
   <button class="icon-btn" onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')" title="Aviso vencimento">
     <i class="bi bi-whatsapp"></i>
   </button>
-  <button class="icon-btn" onclick="enviarInscricaoIdx(${idx})" title="Confirmar inscrição">
-    <i class="bi bi-person-check-fill"></i>
-  </button>
+  
   <button class="icon-btn" onclick="editAluno(${idx})" title="Editar">
     <i class="bi bi-pencil-square"></i>
   </button>
