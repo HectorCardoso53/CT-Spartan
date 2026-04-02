@@ -84,7 +84,6 @@ function renderPagamentos() {
   // ===== TABELA =====
   document.getElementById("pagamentos-tbody").innerHTML = list
     .map((p) => {
-
       // 🔥 BUSCA O ALUNO CERTO
       const aluno = alunos.find((a) => a.id === p.alunoId);
 
@@ -130,7 +129,6 @@ const valorPagamento = document.getElementById("p-valor");
 
 if (valorPagamento) {
   valorPagamento.addEventListener("input", function (e) {
-
     let value = e.target.value.replace(/\D/g, "");
 
     if (!value) {
@@ -140,9 +138,7 @@ if (valorPagamento) {
 
     value = (parseInt(value) / 100).toFixed(2);
 
-    value = value
-      .replace(".", ",")
-      .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+    value = value.replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
     e.target.value = "R$ " + value;
   });
@@ -332,11 +328,11 @@ function renderDashboard() {
   document.getElementById("leg-musc").textContent = musc;
   document.getElementById("leg-func").textContent = func;
 
-const atrasados = alunos.filter(
-  (a) => calcularStatusAluno(a) === "Atrasado"
-).length;
+  const atrasados = alunos.filter(
+    (a) => calcularStatusAluno(a) === "Atrasado",
+  ).length;
 
-document.getElementById("leg-atr").textContent = atrasados;
+  document.getElementById("leg-atr").textContent = atrasados;
   // ===== DONUT =====
 
   const total = alunos.length || 1;
@@ -569,7 +565,7 @@ function abrirModalPagamento(idx) {
   const valor = aluno.valor;
 
   document.getElementById("p-valor").value =
-  "R$ " + Number(valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+    "R$ " + Number(valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
 
   document.getElementById("p-data").value = new Date()
     .toISOString()
@@ -604,10 +600,7 @@ async function confirmarPagamento() {
 
   // 🔥 converte "R$ 180,00" → 180
   const valor = Number(
-    valorStr
-      .replace("R$", "")
-      .replace(/\./g, "")
-      .replace(",", ".")
+    valorStr.replace("R$", "").replace(/\./g, "").replace(",", "."),
   );
 
   if (!valor || valor <= 0) {
@@ -619,7 +612,7 @@ async function confirmarPagamento() {
   const q = query(
     collection(db, "pagamentos"),
     where("alunoId", "==", pagamentoAluno.id),
-    where("mes", "==", mes)
+    where("mes", "==", mes),
   );
 
   const snap = await getDocs(q);
@@ -686,7 +679,6 @@ async function deleteAluno(idx) {
 
 // ===== TURMAS =====
 function renderTurmas() {
-
   const CAPACIDADE_TURMA = 50;
 
   const funcTurmas = [
@@ -698,9 +690,8 @@ function renderTurmas() {
   // ===== FUNCIONAL =====
   document.getElementById("turma-funcional").innerHTML = funcTurmas
     .map((t) => {
-
       const count = alunos.filter(
-        (a) => a.modalidade === "funcional" && a.turma === t.id
+        (a) => a.modalidade === "funcional" && a.turma === t.id,
       ).length;
 
       const vagas = CAPACIDADE_TURMA - count;
@@ -743,16 +734,12 @@ function renderTurmas() {
     })
     .join("");
 
-
   // ===== MUSCULAÇÃO =====
   const muscHorarios = [
     ...new Set(
-      alunos
-        .filter((a) => a.modalidade === "musculacao")
-        .map((a) => a.horario)
+      alunos.filter((a) => a.modalidade === "musculacao").map((a) => a.horario),
     ),
   ].sort((a, b) => a.localeCompare(b));
-
 
   document.getElementById("turma-musculacao").innerHTML =
     muscHorarios.length === 0
@@ -766,9 +753,8 @@ function renderTurmas() {
       `
       : muscHorarios
           .map((h) => {
-
             const count = alunos.filter(
-              (a) => a.modalidade === "musculacao" && a.horario === h
+              (a) => a.modalidade === "musculacao" && a.horario === h,
             ).length;
 
             const vagas = CAPACIDADE_TURMA - count;
@@ -970,25 +956,21 @@ function renderAlunosFiltrados(lista) {
     .join("");
 }
 
-function toggleMenu(){
+function toggleMenu() {
   const sidebar = document.querySelector(".sidebar");
   sidebar.classList.toggle("open");
 }
 
 window.toggleMenu = toggleMenu;
 
-document.addEventListener("click", function(e){
-
+document.addEventListener("click", function (e) {
   const sidebar = document.querySelector(".sidebar");
   const toggle = document.querySelector(".menu-toggle");
 
-  if(!sidebar.contains(e.target) && !toggle.contains(e.target)){
+  if (!sidebar.contains(e.target) && !toggle.contains(e.target)) {
     sidebar.classList.remove("open");
   }
-
 });
-
-
 
 // ===== MODAL =====
 // ===== MODAL =====
@@ -1059,35 +1041,80 @@ if (valorInput) {
   });
 }
 
+function enviarConfirmacaoInscricao(aluno) {
+  if (!aluno.tel) return;
+  const numero = formatarNumeroWpp(aluno.tel);
+  const modalLabel =
+    aluno.modalidade === "funcional" ? "Funcional" : "Musculação";
+  const horarioLabel =
+    aluno.modalidade === "funcional"
+      ? turmaLabel[aluno.turma] || aluno.turma || "-"
+      : aluno.horario || "-";
+
+  const mensagem =
+    `Olá ${aluno.nome}! 👋\n\n` +
+    `✅ Sua inscrição no CT Spartan foi confirmada com sucesso!\n\n` +
+    `📋 *Dados da matrícula:*\n` +
+    `• Modalidade: ${modalLabel}\n` +
+    `• Horário: ${horarioLabel}\n` +
+    `• Primeiro vencimento: ${fmtDate(aluno.vencimento)}\n\n` +
+    `Estamos ansiosos para te ver treinar! 💪🔥\n\n— CT Spartan`;
+
+  window.open(
+    `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`,
+    "_blank",
+  );
+}
+
+function enviarInscricaoIdx(idx) {
+  enviarConfirmacaoInscricao(alunos[idx]);
+}
+
+function formatarNumeroWpp(tel) {
+  let numero = tel.replace(/\D/g, "");
+  if (numero.startsWith("0")) numero = numero.substring(1);
+  if (!numero.startsWith("55")) numero = "55" + numero;
+  return numero;
+}
+
 function openWhatsApp(tel, nome, vencimento) {
   if (!tel) {
-    alert("Aluno sem telefone cadastrado.");
+    showToast("Aluno sem telefone cadastrado.", "error");
     return;
   }
+  const numero = formatarNumeroWpp(tel);
+  const dias = diasAteVencer(vencimento);
 
-  // Remove tudo que não for número
-  let numero = tel.replace(/\D/g, "");
-
-  // Se começar com 0, remove
-  if (numero.startsWith("0")) {
-    numero = numero.substring(1);
+  let mensagem;
+  if (dias < 0) {
+    mensagem =
+      `Olá ${nome}! 👋\n\n` +
+      `⚠️ Sua mensalidade venceu há *${Math.abs(dias)} dia(s)*, em ${fmtDate(vencimento)}.\n\n` +
+      `Por favor, regularize seu pagamento para continuar treinando normalmente. 💪\n\n` +
+      `Qualquer dúvida estamos à disposição!\n— CT Spartan`;
+  } else if (dias === 0) {
+    mensagem =
+      `Olá ${nome}! 👋\n\n` +
+      `⚠️ Sua mensalidade vence *HOJE* (${fmtDate(vencimento)}).\n\n` +
+      `Não esqueça de renovar para continuar treinando! 💪🔥\n\n` +
+      `— CT Spartan`;
+  } else if (dias <= 5) {
+    mensagem =
+      `Olá ${nome}! 👋\n\n` +
+      `📅 Sua mensalidade vence em *${dias} dia(s)*, no dia ${fmtDate(vencimento)}.\n\n` +
+      `Renove com antecedência e continue treinando sem interrupções! 💪🔥\n\n` +
+      `— CT Spartan`;
+  } else {
+    mensagem =
+      `Olá ${nome}! 👋\n\n` +
+      `Seu plano vence em ${fmtDate(vencimento)}.\n\n` +
+      `Qualquer dúvida estamos à disposição 💪🔥\n\n— CT Spartan`;
   }
 
-  // Se NÃO começar com 55, adiciona
-  if (!numero.startsWith("55")) {
-    numero = "55" + numero;
-  }
-
-  const mensagem = `Olá ${nome}! 👋
-
-Seu plano vence em ${fmtDate(vencimento)}.
-
-Qualquer dúvida estamos à disposição 💪🔥`;
-
-  // 🔥 IMPORTANTE: usar api.whatsapp.com
-  const url = `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`;
-
-  window.open(url, "_blank");
+  window.open(
+    `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`,
+    "_blank",
+  );
 }
 
 function openWhatsAppAvaliacao(tel, nome, avaliacao) {
@@ -1095,23 +1122,41 @@ function openWhatsAppAvaliacao(tel, nome, avaliacao) {
     showToast("Aluno sem telefone cadastrado.", "error");
     return;
   }
+  const numero = formatarNumeroWpp(tel);
+  const dias = diasAteVencer(avaliacao);
 
-  let numero = tel.replace(/\D/g, "");
-
-  if (!numero.startsWith("55")) {
-    numero = "55" + numero;
+  let mensagem;
+  if (dias < 0) {
+    mensagem =
+      `Olá ${nome}! 👋\n\n` +
+      `📋 Sua avaliação física estava agendada para ${fmtDate(avaliacao)} e ainda não foi realizada.\n\n` +
+      `Entre em contato para remarcar! 💪\n\n— CT Spartan`;
+  } else if (dias === 0) {
+    mensagem =
+      `Olá ${nome}! 👋\n\n` +
+      `📋 Sua avaliação física é *HOJE* (${fmtDate(avaliacao)})!\n\n` +
+      `Venha preparado(a) e contamos com você! 💪🔥\n\n— CT Spartan`;
+  } else if (dias <= 5) {
+    mensagem =
+      `Olá ${nome}! 👋\n\n` +
+      `📋 Sua avaliação física está agendada para *${fmtDate(avaliacao)}*, daqui *${dias} dia(s)*.\n\n` +
+      `⚠️ *Como se preparar:*\n` +
+      `• Mulheres: biquíni ou top + short\n` +
+      `• Homens: sunga ou bermuda curta\n` +
+      `• Evite refeições pesadas 2h antes\n` +
+      `• Chegue 10 min antes\n\n` +
+      `Contamos com você! 💪🔥\n\n— CT Spartan`;
+  } else {
+    mensagem =
+      `Olá ${nome}! 👋\n\n` +
+      `📋 Sua avaliação física está agendada para ${fmtDate(avaliacao)}.\n\n` +
+      `Contamos com você 💪🔥\n\n— CT Spartan`;
   }
 
-  const mensagem = `Olá ${nome}! 👋
-
-Sua avaliação física está agendada para ${fmtDate(avaliacao)}.
-
-Contamos com você 💪🔥
-CT Spartan`;
-
-  const url = `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`;
-
-  window.open(url, "_blank");
+  window.open(
+    `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`,
+    "_blank",
+  );
 }
 
 window.openWhatsAppAvaliacao = openWhatsAppAvaliacao;
@@ -1211,7 +1256,6 @@ function editAluno(idx) {
 }
 
 async function saveAluno() {
-
   const nome = document.getElementById("f-nome").value.trim();
 
   if (!nome) {
@@ -1229,16 +1273,15 @@ async function saveAluno() {
 
   const telFormatado = numeroLimpo.replace(
     /^(\d{2})(\d{5})(\d{4})$/,
-    "($1) $2-$3"
+    "($1) $2-$3",
   );
 
-const nascimento = document.getElementById("f-nascimento").value;
+  const nascimento = document.getElementById("f-nascimento").value;
 
-if (!nascimento) {
-  showToast("Informe a data de nascimento.", "error");
-  return;
-}
-
+  if (!nascimento) {
+    showToast("Informe a data de nascimento.", "error");
+    return;
+  }
 
   const modalidade = document.getElementById("f-modal").value;
 
@@ -1256,10 +1299,7 @@ if (!nascimento) {
   }
 
   const valor = Number(
-    valorStr
-      .replace("R$", "")
-      .replace(/\./g, "")
-      .replace(",", ".")
+    valorStr.replace("R$", "").replace(/\./g, "").replace(",", "."),
   );
 
   if (!valor || valor <= 0) {
@@ -1272,7 +1312,6 @@ if (!nascimento) {
 
   // ===== LIMITAR 50 POR TURMA/HORÁRIO =====
   const totalNaTurma = alunos.filter((a) => {
-
     if (editingId !== null && a.id === alunos[editingId].id) return false;
 
     if (modalidade === "funcional") {
@@ -1284,7 +1323,6 @@ if (!nascimento) {
     }
 
     return false;
-
   }).length;
 
   if (totalNaTurma >= 50) {
@@ -1296,13 +1334,11 @@ if (!nascimento) {
   const snap = await getDocs(collection(db, "alunos"));
 
   const telefoneDuplicado = snap.docs.find((docSnap) => {
-
     if (editingId !== null && docSnap.id === alunos[editingId].id) return false;
 
     const telBanco = docSnap.data().tel.replace(/\D/g, "");
 
     return telBanco === numeroLimpo;
-
   });
 
   if (telefoneDuplicado) {
@@ -1330,37 +1366,26 @@ if (!nascimento) {
 
     status: document.getElementById("f-status").value,
 
-    statusAval: editingId !== null
-      ? alunos[editingId].statusAval
-      : "Pendente",
+    statusAval: editingId !== null ? alunos[editingId].statusAval : "Pendente",
 
     dataEntrada: new Date().toISOString().slice(0, 10),
   };
 
   try {
-
     if (editingId !== null) {
-
       await updateDoc(doc(db, "alunos", alunos[editingId].id), aluno);
-
     } else {
-
       await addDoc(collection(db, "alunos"), aluno);
-
     }
 
     closeModal();
     carregarAlunos();
 
     showToast("Aluno salvo com sucesso!", "success");
-
   } catch (error) {
-
     console.error("Erro ao salvar:", error);
     showToast("Erro ao salvar aluno.", "error");
-
   }
-
 }
 
 function renderAlunos() {
@@ -1459,24 +1484,21 @@ function renderAlunos() {
 </td>
 
 <td>
-
-<button class="icon-btn" onclick="abrirModalPagamento(${idx})">
-  <i class="bi bi-cash"></i>
-</button>
-
-<button class="icon-btn"
-onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')">
-  <i class="bi bi-whatsapp"></i>
-</button>
-
-<button class="icon-btn" onclick="editAluno(${idx})">
-  <i class="bi bi-pencil-square"></i>
-</button>
-
-<button class="icon-btn" onclick="deleteAluno(${idx})">
-  <i class="bi bi-trash"></i>
-</button>
-
+  <button class="icon-btn" onclick="abrirModalPagamento(${idx})" title="Registrar pagamento">
+    <i class="bi bi-cash"></i>
+  </button>
+  <button class="icon-btn" onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')" title="Aviso vencimento">
+    <i class="bi bi-whatsapp"></i>
+  </button>
+  <button class="icon-btn" onclick="enviarInscricaoIdx(${idx})" title="Confirmar inscrição">
+    <i class="bi bi-person-check-fill"></i>
+  </button>
+  <button class="icon-btn" onclick="editAluno(${idx})" title="Editar">
+    <i class="bi bi-pencil-square"></i>
+  </button>
+  <button class="icon-btn" onclick="deleteAluno(${idx})" title="Remover">
+    <i class="bi bi-trash"></i>
+  </button>
 </td>
 
 </tr>
@@ -1564,17 +1586,17 @@ function diasParaAniversario(dataNasc) {
 
 // ===== ALERTAS =====
 function renderAlertas() {
-
   // ===============================
   // PLANOS VENCIDOS
   // ===============================
   const venc = alunos.filter((a) => diasAteVencer(a.vencimento) < 0);
 
   document.getElementById("alertas-vencidos").innerHTML = venc.length
-    ? venc.map((a) => {
-        const d = Math.abs(diasAteVencer(a.vencimento));
+    ? venc
+        .map((a) => {
+          const d = Math.abs(diasAteVencer(a.vencimento));
 
-        return `<div class="alert-item">
+          return `<div class="alert-item">
           <div class="alert-avatar" style="background:#ef444420;color:#ef4444">
             ${iniciais(a.nome)}
           </div>
@@ -1582,9 +1604,11 @@ function renderAlertas() {
           <div class="alert-info">
             <strong>${a.nome}</strong>
             <small>
-              ${a.modalidade === "musculacao"
-                ? `<i class="bi bi-barbell"></i> Musculação`
-                : `<i class="bi bi-lightning-charge-fill"></i> Funcional`}
+              ${
+                a.modalidade === "musculacao"
+                  ? `<i class="bi bi-barbell"></i> Musculação`
+                  : `<i class="bi bi-lightning-charge-fill"></i> Funcional`
+              }
               · ${a.horario}
             </small>
           </div>
@@ -1599,7 +1623,8 @@ function renderAlertas() {
             </small>
           </div>
         </div>`;
-      }).join("")
+        })
+        .join("")
     : `<div class="empty">
         <div class="empty-icon">
           <i class="bi bi-check-circle-fill" style="color:var(--green);"></i>
@@ -1616,10 +1641,11 @@ function renderAlertas() {
   });
 
   document.getElementById("alertas-proximos").innerHTML = prox.length
-    ? prox.map((a) => {
-        const d = diasAteVencer(a.vencimento);
+    ? prox
+        .map((a) => {
+          const d = diasAteVencer(a.vencimento);
 
-        return `<div class="alert-item">
+          return `<div class="alert-item">
           <div class="alert-avatar" style="background:#f5a62320;color:#f5a623">
             ${iniciais(a.nome)}
           </div>
@@ -1627,9 +1653,11 @@ function renderAlertas() {
           <div class="alert-info">
             <strong>${a.nome}</strong>
             <small>
-              ${a.modalidade === "musculacao"
-                ? `<i class="bi bi-barbell"></i> Musculação`
-                : `<i class="bi bi-lightning-charge-fill"></i> Funcional`}
+              ${
+                a.modalidade === "musculacao"
+                  ? `<i class="bi bi-barbell"></i> Musculação`
+                  : `<i class="bi bi-lightning-charge-fill"></i> Funcional`
+              }
               · ${a.horario}
             </small>
           </div>
@@ -1643,7 +1671,8 @@ function renderAlertas() {
             </small>
           </div>
         </div>`;
-      }).join("")
+        })
+        .join("")
     : `<div class="empty">
         <div class="empty-icon">
           <i class="bi bi-emoji-smile"></i>
@@ -1655,14 +1684,15 @@ function renderAlertas() {
   // AVALIAÇÕES
   // ===============================
   const avals = alunos.filter(
-    (a) => a.statusAval === "Pendente" && diasAteVencer(a.avaliacao) <= 5
+    (a) => a.statusAval === "Pendente" && diasAteVencer(a.avaliacao) <= 5,
   );
 
   document.getElementById("alertas-avals").innerHTML = avals.length
-    ? avals.map((a) => {
-        const d = diasAteVencer(a.avaliacao);
+    ? avals
+        .map((a) => {
+          const d = diasAteVencer(a.avaliacao);
 
-        return `<div class="alert-item">
+          return `<div class="alert-item">
           <div class="alert-avatar" style="background:#3b82f620;color:#3b82f6">
             ${iniciais(a.nome)}
           </div>
@@ -1674,16 +1704,19 @@ function renderAlertas() {
 
           <div style="text-align:right">
             <div style="color:var(--blue);font-size:0.85rem">
-              ${d < 0
-                ? `Atrasada ${Math.abs(d)} dia(s)`
-                : d === 0
-                ? "Hoje"
-                : `Em ${d} dia(s)`}
+              ${
+                d < 0
+                  ? `Atrasada ${Math.abs(d)} dia(s)`
+                  : d === 0
+                    ? "Hoje"
+                    : `Em ${d} dia(s)`
+              }
             </div>
             <small>${fmtDate(a.avaliacao)}</small>
           </div>
         </div>`;
-      }).join("")
+        })
+        .join("")
     : `<div class="empty">
         <div class="empty-icon">
           <i class="bi bi-clipboard-check-fill"></i>
@@ -1702,16 +1735,16 @@ function renderAlertas() {
   // 🔥 ordena por proximidade
   aniversariantes.sort(
     (a, b) =>
-      diasParaAniversario(a.nascimento) -
-      diasParaAniversario(b.nascimento)
+      diasParaAniversario(a.nascimento) - diasParaAniversario(b.nascimento),
   );
 
   document.getElementById("alertas-aniversarios").innerHTML =
     aniversariantes.length
-      ? aniversariantes.map((a) => {
-          const d = diasParaAniversario(a.nascimento);
+      ? aniversariantes
+          .map((a) => {
+            const d = diasParaAniversario(a.nascimento);
 
-          return `<div class="alert-item">
+            return `<div class="alert-item">
             <div class="alert-avatar" style="background:#22c55e20;color:#22c55e">
               ${iniciais(a.nome)}
             </div>
@@ -1720,11 +1753,7 @@ function renderAlertas() {
               <strong>${a.nome}</strong>
               <small>
   <i class="bi bi-gift-fill" style="color:#22c55e;margin-right:4px;"></i>
-  ${
-    d === 0
-      ? "Aniversário HOJE!"
-      : `Em ${d} dia(s)`
-  }
+  ${d === 0 ? "Aniversário HOJE!" : `Em ${d} dia(s)`}
 </small>
             </div>
 
@@ -1732,7 +1761,8 @@ function renderAlertas() {
               <small>${fmtDate(a.nascimento)}</small>
             </div>
           </div>`;
-        }).join("")
+          })
+          .join("")
       : `<div class="empty">
           <div class="empty-icon">
             <i class="bi bi-emoji-smile"></i>
@@ -1761,3 +1791,5 @@ window.abrirModalPagamento = abrirModalPagamento;
 window.fecharModalPagamento = fecharModalPagamento;
 window.confirmarPagamento = confirmarPagamento;
 window.renderPagamentos = renderPagamentos;
+window.enviarInscricaoIdx = enviarInscricaoIdx;
+window.openWhatsAppAvaliacao = openWhatsAppAvaliacao;
