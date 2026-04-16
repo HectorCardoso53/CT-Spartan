@@ -152,23 +152,6 @@ async function carregarAlunos() {
     ...d.data(),
   }));
 
-  // ===== LISTENERS FILTROS =====
-  document
-    .getElementById("filter-modal")
-    ?.addEventListener("change", renderAlunos);
-
-  document
-    .getElementById("filter-horario")
-    ?.addEventListener("change", renderAlunos);
-
-  document
-    .getElementById("search-aluno")
-    ?.addEventListener("input", renderAlunos);
-
-  document
-    .getElementById("filter-aval-status")
-    ?.addEventListener("change", renderAvaliacoes);
-
   renderDashboard();
   populateHorarioFilter();
   renderAlunos();
@@ -244,6 +227,23 @@ function fmtDate(d) {
   const [y, m, dd] = d.split("-");
   return `${dd}/${m}/${y}`;
 }
+
+function formatarNumeroWpp(tel) {
+  if (!tel) return "";
+
+  let numero = tel.replace(/\D/g, "");
+
+  if (numero.startsWith("0")) {
+    numero = numero.substring(1);
+  }
+
+  if (!numero.startsWith("55")) {
+    numero = "55" + numero;
+  }
+
+  return numero;
+}
+
 function iniciais(nome) {
   return nome
     .split(" ")
@@ -1041,80 +1041,35 @@ if (valorInput) {
   });
 }
 
-function enviarConfirmacaoInscricao(aluno) {
-  if (!aluno.tel) return;
-  const numero = formatarNumeroWpp(aluno.tel);
-  const modalLabel =
-    aluno.modalidade === "funcional" ? "Funcional" : "Musculação";
-  const horarioLabel =
-    aluno.modalidade === "funcional"
-      ? turmaLabel[aluno.turma] || aluno.turma || "-"
-      : aluno.horario || "-";
-
-  const mensagem =
-    `Olá ${aluno.nome}! 👋\n\n` +
-    `✅ Sua inscrição no CT Spartan foi confirmada com sucesso!\n\n` +
-    `📋 *Dados da matrícula:*\n` +
-    `• Modalidade: ${modalLabel}\n` +
-    `• Horário: ${horarioLabel}\n` +
-    `• Primeiro vencimento: ${fmtDate(aluno.vencimento)}\n\n` +
-    `Estamos ansiosos para te ver treinar! 💪🔥\n\n— CT Spartan`;
-
-  window.open(
-    `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`,
-    "_blank",
-  );
-}
-
-function enviarInscricaoIdx(idx) {
-  enviarConfirmacaoInscricao(alunos[idx]);
-}
-
-function formatarNumeroWpp(tel) {
-  let numero = tel.replace(/\D/g, "");
-  if (numero.startsWith("0")) numero = numero.substring(1);
-  if (!numero.startsWith("55")) numero = "55" + numero;
-  return numero;
-}
-
 function openWhatsApp(tel, nome, vencimento) {
   if (!tel) {
-    showToast("Aluno sem telefone cadastrado.", "error");
+    alert("Aluno sem telefone cadastrado.");
     return;
   }
-  const numero = formatarNumeroWpp(tel);
-  const dias = diasAteVencer(vencimento);
 
-  let mensagem;
-  if (dias < 0) {
-    mensagem =
-      `Olá ${nome}! 👋\n\n` +
-      `⚠️ Sua mensalidade venceu há *${Math.abs(dias)} dia(s)*, em ${fmtDate(vencimento)}.\n\n` +
-      `Por favor, regularize seu pagamento para continuar treinando normalmente. 💪\n\n` +
-      `Qualquer dúvida estamos à disposição!\n— CT Spartan`;
-  } else if (dias === 0) {
-    mensagem =
-      `Olá ${nome}! 👋\n\n` +
-      `⚠️ Sua mensalidade vence *HOJE* (${fmtDate(vencimento)}).\n\n` +
-      `Não esqueça de renovar para continuar treinando! 💪🔥\n\n` +
-      `— CT Spartan`;
-  } else if (dias <= 5) {
-    mensagem =
-      `Olá ${nome}! 👋\n\n` +
-      `📅 Sua mensalidade vence em *${dias} dia(s)*, no dia ${fmtDate(vencimento)}.\n\n` +
-      `Renove com antecedência e continue treinando sem interrupções! 💪🔥\n\n` +
-      `— CT Spartan`;
-  } else {
-    mensagem =
-      `Olá ${nome}! 👋\n\n` +
-      `Seu plano vence em ${fmtDate(vencimento)}.\n\n` +
-      `Qualquer dúvida estamos à disposição 💪🔥\n\n— CT Spartan`;
+  // Remove tudo que não for número
+  let numero = tel.replace(/\D/g, "");
+
+  // Se começar com 0, remove
+  if (numero.startsWith("0")) {
+    numero = numero.substring(1);
   }
 
-  window.open(
-    `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`,
-    "_blank",
-  );
+  // Se NÃO começar com 55, adiciona
+  if (!numero.startsWith("55")) {
+    numero = "55" + numero;
+  }
+
+  const mensagem = `Olá ${nome}! 👋
+
+Seu plano vence em ${fmtDate(vencimento)}.
+
+Qualquer dúvida estamos à disposição 💪🔥`;
+
+  // 🔥 IMPORTANTE: usar api.whatsapp.com
+  const url = `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`;
+
+  window.open(url, "_blank");
 }
 
 function openWhatsAppAvaliacao(tel, nome, avaliacao) {
@@ -1122,41 +1077,23 @@ function openWhatsAppAvaliacao(tel, nome, avaliacao) {
     showToast("Aluno sem telefone cadastrado.", "error");
     return;
   }
-  const numero = formatarNumeroWpp(tel);
-  const dias = diasAteVencer(avaliacao);
 
-  let mensagem;
-  if (dias < 0) {
-    mensagem =
-      `Olá ${nome}! 👋\n\n` +
-      `📋 Sua avaliação física estava agendada para ${fmtDate(avaliacao)} e ainda não foi realizada.\n\n` +
-      `Entre em contato para remarcar! 💪\n\n— CT Spartan`;
-  } else if (dias === 0) {
-    mensagem =
-      `Olá ${nome}! 👋\n\n` +
-      `📋 Sua avaliação física é *HOJE* (${fmtDate(avaliacao)})!\n\n` +
-      `Venha preparado(a) e contamos com você! 💪🔥\n\n— CT Spartan`;
-  } else if (dias <= 5) {
-    mensagem =
-      `Olá ${nome}! 👋\n\n` +
-      `📋 Sua avaliação física está agendada para *${fmtDate(avaliacao)}*, daqui *${dias} dia(s)*.\n\n` +
-      `⚠️ *Como se preparar:*\n` +
-      `• Mulheres: biquíni ou top + short\n` +
-      `• Homens: sunga ou bermuda curta\n` +
-      `• Evite refeições pesadas 2h antes\n` +
-      `• Chegue 10 min antes\n\n` +
-      `Contamos com você! 💪🔥\n\n— CT Spartan`;
-  } else {
-    mensagem =
-      `Olá ${nome}! 👋\n\n` +
-      `📋 Sua avaliação física está agendada para ${fmtDate(avaliacao)}.\n\n` +
-      `Contamos com você 💪🔥\n\n— CT Spartan`;
+  let numero = tel.replace(/\D/g, "");
+
+  if (!numero.startsWith("55")) {
+    numero = "55" + numero;
   }
 
-  window.open(
-    `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`,
-    "_blank",
-  );
+  const mensagem = `Olá ${nome}! 👋
+
+Sua avaliação física está agendada para ${fmtDate(avaliacao)}.
+
+Contamos com você 💪🔥
+CT Spartan`;
+
+  const url = `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`;
+
+  window.open(url, "_blank");
 }
 
 window.openWhatsAppAvaliacao = openWhatsAppAvaliacao;
@@ -1485,22 +1422,23 @@ function renderAlunos() {
 
 <td>
 
-<button class="icon-btn" onclick="enviarInscricaoIdx(${idx})" title="Confirmar inscrição">
-    <i class="bi bi-person-check-fill"></i>
-  </button>
-  <button class="icon-btn" onclick="abrirModalPagamento(${idx})" title="Registrar pagamento">
-    <i class="bi bi-cash"></i>
-  </button>
-  <button class="icon-btn" onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')" title="Aviso vencimento">
-    <i class="bi bi-whatsapp"></i>
-  </button>
-  
-  <button class="icon-btn" onclick="editAluno(${idx})" title="Editar">
-    <i class="bi bi-pencil-square"></i>
-  </button>
-  <button class="icon-btn" onclick="deleteAluno(${idx})" title="Remover">
-    <i class="bi bi-trash"></i>
-  </button>
+<button class="icon-btn" onclick="abrirModalPagamento(${idx})">
+  <i class="bi bi-cash"></i>
+</button>
+
+<button class="icon-btn"
+onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')">
+  <i class="bi bi-whatsapp"></i>
+</button>
+
+<button class="icon-btn" onclick="editAluno(${idx})">
+  <i class="bi bi-pencil-square"></i>
+</button>
+
+<button class="icon-btn" onclick="deleteAluno(${idx})">
+  <i class="bi bi-trash"></i>
+</button>
+
 </td>
 
 </tr>
@@ -1759,8 +1697,15 @@ function renderAlertas() {
 </small>
             </div>
 
-            <div style="text-align:right">
-              <small>${fmtDate(a.nascimento)}</small>
+            <div style="display:flex;gap:8px;align-items:center">
+              <small style="color:var(--muted)">${fmtDate(a.nascimento)}</small>
+              ${
+                a.tel
+                  ? `<button class="btn-whatsapp" onclick="openWhatsAppAniversario('${a.tel}','${a.nome}')" style="padding:4px 10px;font-size:0.78rem;border-radius:7px;" title="Enviar parabéns">
+                <i class="bi bi-whatsapp"></i> Parabéns
+              </button>`
+                  : ""
+              }
             </div>
           </div>`;
           })
@@ -1772,6 +1717,165 @@ function renderAlertas() {
           <div>Nenhum aniversário próximo</div>
         </div>`;
 }
+
+// ===== WHATSAPP ANIVERSÁRIO =====
+function openWhatsAppAniversario(tel, nome) {
+  if (!tel) {
+    showToast("Aluno sem telefone cadastrado.", "error");
+    return;
+  }
+  const numero = formatarNumeroWpp(tel);
+  const mensagem =
+    `🎉 Parabéns, ${nome}! 🎂\n\n` +
+    `Toda a equipe do CT Spartan deseja a você um feliz aniversário! 🥳\n\n` +
+    `Continue treinando forte e que esse novo ciclo seja cheio de saúde, conquistas e superações! 💪🔥\n\n` +
+    `Um abraço,\nEquipe CT Spartan`;
+  window.open(
+    `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`,
+    "_blank",
+  );
+}
+
+// ===== TRANSMISSÃO — SOLICITAR DATA DE NASCIMENTO =====
+// Usa modal com botão manual para cada aluno porque navegadores
+// bloqueiam window.open() disparado por setTimeout (não é gesto do usuário)
+let _transmissaoLista = [];
+let _transmissaoIndex = 0;
+
+function transmitirSolicitarNascimento() {
+  const semNasc = alunos.filter((a) => !a.nascimento && a.tel);
+
+  if (semNasc.length === 0) {
+    showToast("Todos os alunos já têm data de nascimento! ✅");
+    return;
+  }
+
+  _transmissaoLista = semNasc;
+  _transmissaoIndex = 0;
+  _abrirModalTransmissao();
+}
+
+function _abrirModalTransmissao() {
+  // Remove modal anterior se existir
+  document.getElementById("modal-transmissao")?.remove();
+
+  const total = _transmissaoLista.length;
+  const atual = _transmissaoIndex;
+
+  if (atual >= total) {
+    showToast(`✅ Transmissão concluída! ${total} mensagem(ns) enviada(s).`);
+    _transmissaoLista = [];
+    _transmissaoIndex = 0;
+    return;
+  }
+
+  const aluno = _transmissaoLista[atual];
+  const numero = formatarNumeroWpp(aluno.tel);
+  const mensagem =
+    `Olá ${aluno.nome}! 👋\n\n` +
+    `Estamos atualizando o cadastro dos alunos do *CT Spartan*. 📋\n\n` +
+    `Para completar o seu, precisamos da sua *data de nascimento*.\n\n` +
+    `Por favor, nos responda neste chat no formato:\n` +
+    `*DD/MM/AAAA*\n\n` +
+    `Exemplo: 15/03/1995\n\n` +
+    `Obrigado! 💪🔥\n— Equipe CT Spartan`;
+
+  const url = `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`;
+
+  // Cria modal inline
+  const modal = document.createElement("div");
+  modal.id = "modal-transmissao";
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,0.7);
+    z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;
+  `;
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;
+                width:100%;max-width:460px;overflow:hidden;animation:slideUp .25s ease;">
+      <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);
+                  display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.72rem;color:var(--accent);text-transform:uppercase;
+                      letter-spacing:1.5px;font-weight:600;margin-bottom:4px;">
+            Transmissão — Solicitar Nascimento
+          </div>
+          <div style="font-size:0.85rem;color:var(--muted);">
+            ${atual + 1} de ${total} alunos
+          </div>
+        </div>
+        <button onclick="fecharTransmissao()" style="background:none;border:none;
+          color:var(--muted);font-size:1.3rem;cursor:pointer;">✕</button>
+      </div>
+
+      <div style="padding:20px 24px;">
+        <!-- Barra de progresso -->
+        <div style="height:4px;background:var(--border);border-radius:2px;margin-bottom:18px;">
+          <div style="height:100%;border-radius:2px;background:var(--accent);
+                      width:${Math.round((atual / total) * 100)}%;transition:width .3s;"></div>
+        </div>
+
+        <!-- Aluno -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+          <div style="width:42px;height:42px;border-radius:10px;background:rgba(232,52,42,0.15);
+                      color:var(--accent);display:flex;align-items:center;justify-content:center;
+                      font-weight:700;font-size:0.9rem;flex-shrink:0;">
+            ${iniciais(aluno.nome)}
+          </div>
+          <div>
+            <div style="font-weight:600;">${aluno.nome}</div>
+            <div style="font-size:0.82rem;color:var(--muted);">${aluno.tel}</div>
+          </div>
+        </div>
+
+        <!-- Botão principal — abre WhatsApp (gesto direto do usuário = funciona) -->
+        <a href="${url}" target="_blank"
+           onclick="setTimeout(_proxTransmissao, 300)"
+           style="display:flex;align-items:center;justify-content:center;gap:8px;
+                  width:100%;padding:13px;background:#25D366;border-radius:11px;
+                  color:#fff;font-weight:700;font-size:0.95rem;
+                  text-decoration:none;margin-bottom:10px;box-sizing:border-box;">
+          <i class="bi bi-whatsapp"></i>
+          Abrir WhatsApp para ${aluno.nome.split(" ")[0]}
+        </a>
+
+        <!-- Pular -->
+        <button onclick="_proxTransmissao()"
+          style="width:100%;padding:10px;background:transparent;border:1px solid var(--border);
+                 border-radius:11px;color:var(--muted);font-size:0.85rem;cursor:pointer;">
+          Pular este aluno
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+}
+
+function _proxTransmissao() {
+  _transmissaoIndex++;
+  _abrirModalTransmissao();
+}
+
+function fecharTransmissao() {
+  document.getElementById("modal-transmissao")?.remove();
+  _transmissaoLista = [];
+  _transmissaoIndex = 0;
+}
+
+// ===== LISTENERS DE FILTROS (registrados uma única vez) =====
+document
+  .getElementById("filter-modal")
+  ?.addEventListener("change", renderAlunos);
+document
+  .getElementById("filter-horario")
+  ?.addEventListener("change", renderAlunos);
+document
+  .getElementById("search-aluno")
+  ?.addEventListener("input", renderAlunos);
+document
+  .getElementById("filter-aval-status")
+  ?.addEventListener("change", renderAvaliacoes);
+
 carregarAlunos();
 
 window.navigate = navigate;
@@ -1786,12 +1890,13 @@ window.saveAluno = saveAluno;
 window.marcarRealizada = marcarRealizada;
 window.logout = logout;
 window.openWhatsApp = openWhatsApp;
-
 window.registrarPagamento = registrarPagamento;
-
 window.abrirModalPagamento = abrirModalPagamento;
 window.fecharModalPagamento = fecharModalPagamento;
 window.confirmarPagamento = confirmarPagamento;
 window.renderPagamentos = renderPagamentos;
-window.enviarInscricaoIdx = enviarInscricaoIdx;
 window.openWhatsAppAvaliacao = openWhatsAppAvaliacao;
+window.openWhatsAppAniversario = openWhatsAppAniversario;
+window.transmitirSolicitarNascimento = transmitirSolicitarNascimento;
+window.fecharTransmissao = fecharTransmissao;
+window._proxTransmissao = _proxTransmissao;

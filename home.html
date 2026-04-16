@@ -219,6 +219,14 @@
                         </select>
                     </div>
 
+                    <!-- TRANSMISSÃO: SOLICITAR DATA DE NASCIMENTO -->
+                    <button class="btn btn-ghost" onclick="transmitirSolicitarNascimento()"
+                        title="Envia WhatsApp para todos os alunos sem data de nascimento cadastrada"
+                        style="display:inline-flex;align-items:center;gap:8px;white-space:nowrap;">
+                        <i class="bi bi-whatsapp" style="color:#25D366;font-size:1rem;"></i>
+                        Solicitar Nascimento
+                    </button>
+
                 </div>
 
                 <div class="card">
@@ -246,13 +254,10 @@
 
                         <!-- EMPTY STATE -->
                         <div class="empty" id="alunos-empty" style="display:none">
-
                             <div class="empty-icon">
                                 <i class="bi bi-search text-muted"></i>
                             </div>
-
                             <div>Nenhum aluno encontrado</div>
-
                         </div>
 
                     </div>
