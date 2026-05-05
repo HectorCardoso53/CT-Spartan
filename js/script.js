@@ -10,6 +10,49 @@ import {
   where,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+// ===== LOADING =====
+function showLoading(msg = "Carregando...") {
+  let el = document.getElementById("_loading_overlay");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "_loading_overlay";
+    el.style.cssText = `
+      position:fixed;inset:0;z-index:9000;
+      display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:16px;
+      background:rgba(6,6,8,0.72);backdrop-filter:blur(4px);
+    `;
+    el.innerHTML = `
+      <div style="width:48px;height:48px;border-radius:50%;
+                  border:3px solid rgba(232,52,42,0.2);
+                  border-top-color:var(--accent, #e8342a);
+                  animation:_spin .7s linear infinite;">
+      </div>
+      <div id="_loading_msg"
+           style="font-family:'DM Sans',sans-serif;font-size:0.9rem;
+                  color:rgba(240,240,245,0.75);letter-spacing:0.4px;">
+        ${msg}
+      </div>
+    `;
+    // Injeta keyframe uma única vez
+    if (!document.getElementById("_loading_style")) {
+      const s = document.createElement("style");
+      s.id = "_loading_style";
+      s.textContent = "@keyframes _spin{to{transform:rotate(360deg)}}";
+      document.head.appendChild(s);
+    }
+    document.body.appendChild(el);
+  } else {
+    document.getElementById("_loading_msg").textContent = msg;
+    el.style.display = "flex";
+  }
+}
+
+function hideLoading() {
+  const el = document.getElementById("_loading_overlay");
+  if (el) el.style.display = "none";
+}
+
 // ===== STATE =====
 let alunos = [];
 let editingId = null;
@@ -145,18 +188,23 @@ if (valorPagamento) {
 }
 
 async function carregarAlunos() {
-  const snap = await getDocs(collection(db, "alunos"));
+  showLoading("Carregando alunos...");
+  try {
+    const snap = await getDocs(collection(db, "alunos"));
 
-  alunos = snap.docs.map((d) => ({
-    id: d.id,
-    ...d.data(),
-  }));
+    alunos = snap.docs.map((d) => ({
+      id: d.id,
+      ...d.data(),
+    }));
 
-  renderDashboard();
-  populateHorarioFilter();
-  renderAlunos();
-  renderAvaliacoes();
-  carregarPagamentos();
+    renderDashboard();
+    populateHorarioFilter();
+    renderAlunos();
+    renderAvaliacoes();
+    carregarPagamentos();
+  } finally {
+    hideLoading();
+  }
 }
 
 function daysFromNow(d) {
@@ -227,23 +275,6 @@ function fmtDate(d) {
   const [y, m, dd] = d.split("-");
   return `${dd}/${m}/${y}`;
 }
-
-function formatarNumeroWpp(tel) {
-  if (!tel) return "";
-
-  let numero = tel.replace(/\D/g, "");
-
-  if (numero.startsWith("0")) {
-    numero = numero.substring(1);
-  }
-
-  if (!numero.startsWith("55")) {
-    numero = "55" + numero;
-  }
-
-  return numero;
-}
-
 function iniciais(nome) {
   return nome
     .split(" ")
@@ -552,29 +583,44 @@ function calcularStatusAluno(a) {
   return "Ativo";
 }
 
-function abrirModalPagamento(idx) {
+async function abrirModalPagamento(idx) {
   const aluno = alunos[idx];
-
   pagamentoAluno = aluno;
 
   document.getElementById("p-nome").value = aluno.nome;
-
   document.getElementById("p-modalidade").value =
     aluno.modalidade === "funcional" ? "Funcional" : "Musculação";
-
-  const valor = aluno.valor;
-
   document.getElementById("p-valor").value =
-    "R$ " + Number(valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
-
+    "R$ " +
+    Number(aluno.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 });
   document.getElementById("p-data").value = new Date()
     .toISOString()
     .slice(0, 10);
 
-  document.getElementById("p-mes").value = new Date().toISOString().slice(0, 7);
+  // Busca pagamentos existentes deste aluno
+  const snap = await getDocs(
+    query(collection(db, "pagamentos"), where("alunoId", "==", aluno.id)),
+  );
+  const mesesPagos = snap.docs.map((d) => d.data().mes);
 
+  // Encontra o primeiro mês não pago a partir do vencimento
+  const mesAtual = new Date().toISOString().slice(0, 7);
+  const mesVenc = aluno.vencimento ? aluno.vencimento.slice(0, 7) : mesAtual;
+
+  // Testa do mês do vencimento para trás até achar um não pago
+  let mesSugerido = mesVenc < mesAtual ? mesVenc : mesAtual;
+  // Se o sugerido já está pago, tenta o anterior
+  while (mesesPagos.includes(mesSugerido)) {
+    const [y, m] = mesSugerido.split("-").map(Number);
+    const anterior = new Date(y, m - 2, 1); // mês anterior
+    mesSugerido = anterior.toISOString().slice(0, 7);
+    if (mesSugerido < "2020-01") break; // segurança infinita
+  }
+
+  document.getElementById("p-mes").value = mesSugerido;
   document.getElementById("modal-pagamento").classList.add("open");
 }
+
 function fecharModalPagamento() {
   document.getElementById("modal-pagamento").classList.remove("open");
 
@@ -608,48 +654,52 @@ async function confirmarPagamento() {
     return;
   }
 
-  // 🔴 VERIFICA DUPLICADO
-  const q = query(
-    collection(db, "pagamentos"),
-    where("alunoId", "==", pagamentoAluno.id),
-    where("mes", "==", mes),
-  );
+  showLoading("Registrando pagamento...");
+  try {
+    // 🔴 VERIFICA DUPLICADO
+    const q = query(
+      collection(db, "pagamentos"),
+      where("alunoId", "==", pagamentoAluno.id),
+      where("mes", "==", mes),
+    );
 
-  const snap = await getDocs(q);
+    const snap = await getDocs(q);
 
-  if (!snap.empty) {
-    showToast("Pagamento deste mês já registrado", "error");
-    return;
+    if (!snap.empty) {
+      hideLoading();
+      showToast("Pagamento deste mês já registrado", "error");
+      return;
+    }
+
+    // ✅ SALVA PAGAMENTO
+    await addDoc(collection(db, "pagamentos"), {
+      alunoId: pagamentoAluno.id,
+      nome: pagamentoAluno.nome,
+      modalidade: pagamentoAluno.modalidade,
+
+      turma: pagamentoAluno.turma || null,
+      horario: pagamentoAluno.horario || null,
+
+      mes: mes,
+      valor: valor,
+      data: data,
+    });
+
+    // 🔥 calcula próximo vencimento
+    const prox = new Date(pagamentoAluno.vencimento);
+    prox.setMonth(prox.getMonth() + 1);
+
+    await updateDoc(doc(db, "alunos", pagamentoAluno.id), {
+      vencimento: prox.toISOString().slice(0, 10),
+      status: "Ativo",
+    });
+
+    fecharModalPagamento();
+    showToast("Pagamento registrado");
+    await carregarAlunos();
+  } finally {
+    hideLoading();
   }
-
-  // ✅ SALVA PAGAMENTO
-  await addDoc(collection(db, "pagamentos"), {
-    alunoId: pagamentoAluno.id,
-    nome: pagamentoAluno.nome,
-    modalidade: pagamentoAluno.modalidade,
-
-    turma: pagamentoAluno.turma || null,
-    horario: pagamentoAluno.horario || null,
-
-    mes: mes,
-    valor: valor,
-    data: data,
-  });
-
-  // 🔥 calcula próximo vencimento
-  const prox = new Date(pagamentoAluno.vencimento);
-  prox.setMonth(prox.getMonth() + 1);
-
-  await updateDoc(doc(db, "alunos", pagamentoAluno.id), {
-    vencimento: prox.toISOString().slice(0, 10),
-    status: "Ativo",
-  });
-
-  fecharModalPagamento();
-
-  showToast("Pagamento registrado");
-
-  carregarAlunos();
 }
 
 async function deleteAluno(idx) {
@@ -657,24 +707,28 @@ async function deleteAluno(idx) {
 
   if (!confirm(`Remover ${aluno.nome}?`)) return;
 
-  // 🔴 BUSCA PAGAMENTOS DO ALUNO
-  const q = query(
-    collection(db, "pagamentos"),
-    where("alunoId", "==", aluno.id),
-  );
+  showLoading("Removendo aluno...");
+  try {
+    // 🔴 BUSCA PAGAMENTOS DO ALUNO
+    const q = query(
+      collection(db, "pagamentos"),
+      where("alunoId", "==", aluno.id),
+    );
 
-  const snap = await getDocs(q);
+    const snap = await getDocs(q);
 
-  for (const d of snap.docs) {
-    await deleteDoc(doc(db, "pagamentos", d.id));
+    for (const d of snap.docs) {
+      await deleteDoc(doc(db, "pagamentos", d.id));
+    }
+
+    // 🔴 DELETA O ALUNO
+    await deleteDoc(doc(db, "alunos", aluno.id));
+
+    showToast("Aluno removido");
+    await carregarAlunos();
+  } finally {
+    hideLoading();
   }
-
-  // 🔴 DELETA O ALUNO
-  await deleteDoc(doc(db, "alunos", aluno.id));
-
-  showToast("Aluno removido");
-
-  carregarAlunos();
 }
 
 // ===== TURMAS =====
@@ -1309,6 +1363,10 @@ async function saveAluno() {
   };
 
   try {
+    showLoading(
+      editingId !== null ? "Salvando alterações..." : "Cadastrando aluno...",
+    );
+
     if (editingId !== null) {
       await updateDoc(doc(db, "alunos", alunos[editingId].id), aluno);
     } else {
@@ -1316,12 +1374,14 @@ async function saveAluno() {
     }
 
     closeModal();
-    carregarAlunos();
+    await carregarAlunos();
 
     showToast("Aluno salvo com sucesso!", "success");
   } catch (error) {
     console.error("Erro ao salvar:", error);
     showToast("Erro ao salvar aluno.", "error");
+  } finally {
+    hideLoading();
   }
 }
 
@@ -1697,15 +1757,8 @@ function renderAlertas() {
 </small>
             </div>
 
-            <div style="display:flex;gap:8px;align-items:center">
-              <small style="color:var(--muted)">${fmtDate(a.nascimento)}</small>
-              ${
-                a.tel
-                  ? `<button class="btn-whatsapp" onclick="openWhatsAppAniversario('${a.tel}','${a.nome}')" style="padding:4px 10px;font-size:0.78rem;border-radius:7px;" title="Enviar parabéns">
-                <i class="bi bi-whatsapp"></i> Parabéns
-              </button>`
-                  : ""
-              }
+            <div style="text-align:right">
+              <small>${fmtDate(a.nascimento)}</small>
             </div>
           </div>`;
           })
@@ -1717,152 +1770,7 @@ function renderAlertas() {
           <div>Nenhum aniversário próximo</div>
         </div>`;
 }
-
-// ===== WHATSAPP ANIVERSÁRIO =====
-function openWhatsAppAniversario(tel, nome) {
-  if (!tel) {
-    showToast("Aluno sem telefone cadastrado.", "error");
-    return;
-  }
-  const numero = formatarNumeroWpp(tel);
-  const mensagem =
-    `🎉 Parabéns, ${nome}! 🎂\n\n` +
-    `Toda a equipe do CT Spartan deseja a você um feliz aniversário! 🥳\n\n` +
-    `Continue treinando forte e que esse novo ciclo seja cheio de saúde, conquistas e superações! 💪🔥\n\n` +
-    `Um abraço,\nEquipe CT Spartan`;
-  window.open(
-    `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`,
-    "_blank",
-  );
-}
-
-// ===== TRANSMISSÃO — SOLICITAR DATA DE NASCIMENTO =====
-// Usa modal com botão manual para cada aluno porque navegadores
-// bloqueiam window.open() disparado por setTimeout (não é gesto do usuário)
-let _transmissaoLista = [];
-let _transmissaoIndex = 0;
-
-function transmitirSolicitarNascimento() {
-  const semNasc = alunos.filter((a) => !a.nascimento && a.tel);
-
-  if (semNasc.length === 0) {
-    showToast("Todos os alunos já têm data de nascimento! ✅");
-    return;
-  }
-
-  _transmissaoLista = semNasc;
-  _transmissaoIndex = 0;
-  _abrirModalTransmissao();
-}
-
-function _abrirModalTransmissao() {
-  // Remove modal anterior se existir
-  document.getElementById("modal-transmissao")?.remove();
-
-  const total = _transmissaoLista.length;
-  const atual = _transmissaoIndex;
-
-  if (atual >= total) {
-    showToast(`✅ Transmissão concluída! ${total} mensagem(ns) enviada(s).`);
-    _transmissaoLista = [];
-    _transmissaoIndex = 0;
-    return;
-  }
-
-  const aluno = _transmissaoLista[atual];
-  const numero = formatarNumeroWpp(aluno.tel);
-  const mensagem =
-    `Olá ${aluno.nome}! 👋\n\n` +
-    `Estamos atualizando o cadastro dos alunos do *CT Spartan*. 📋\n\n` +
-    `Para completar o seu, precisamos da sua *data de nascimento*.\n\n` +
-    `Por favor, nos responda neste chat no formato:\n` +
-    `*DD/MM/AAAA*\n\n` +
-    `Exemplo: 15/03/1995\n\n` +
-    `Obrigado! 💪🔥\n— Equipe CT Spartan`;
-
-  const url = `https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`;
-
-  // Cria modal inline
-  const modal = document.createElement("div");
-  modal.id = "modal-transmissao";
-  modal.style.cssText = `
-    position:fixed;inset:0;background:rgba(0,0,0,0.7);
-    z-index:999;display:flex;align-items:center;justify-content:center;padding:20px;
-  `;
-  modal.innerHTML = `
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;
-                width:100%;max-width:460px;overflow:hidden;animation:slideUp .25s ease;">
-      <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);
-                  display:flex;align-items:center;justify-content:space-between;">
-        <div>
-          <div style="font-size:0.72rem;color:var(--accent);text-transform:uppercase;
-                      letter-spacing:1.5px;font-weight:600;margin-bottom:4px;">
-            Transmissão — Solicitar Nascimento
-          </div>
-          <div style="font-size:0.85rem;color:var(--muted);">
-            ${atual + 1} de ${total} alunos
-          </div>
-        </div>
-        <button onclick="fecharTransmissao()" style="background:none;border:none;
-          color:var(--muted);font-size:1.3rem;cursor:pointer;">✕</button>
-      </div>
-
-      <div style="padding:20px 24px;">
-        <!-- Barra de progresso -->
-        <div style="height:4px;background:var(--border);border-radius:2px;margin-bottom:18px;">
-          <div style="height:100%;border-radius:2px;background:var(--accent);
-                      width:${Math.round((atual / total) * 100)}%;transition:width .3s;"></div>
-        </div>
-
-        <!-- Aluno -->
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
-          <div style="width:42px;height:42px;border-radius:10px;background:rgba(232,52,42,0.15);
-                      color:var(--accent);display:flex;align-items:center;justify-content:center;
-                      font-weight:700;font-size:0.9rem;flex-shrink:0;">
-            ${iniciais(aluno.nome)}
-          </div>
-          <div>
-            <div style="font-weight:600;">${aluno.nome}</div>
-            <div style="font-size:0.82rem;color:var(--muted);">${aluno.tel}</div>
-          </div>
-        </div>
-
-        <!-- Botão principal — abre WhatsApp (gesto direto do usuário = funciona) -->
-        <a href="${url}" target="_blank"
-           onclick="setTimeout(_proxTransmissao, 300)"
-           style="display:flex;align-items:center;justify-content:center;gap:8px;
-                  width:100%;padding:13px;background:#25D366;border-radius:11px;
-                  color:#fff;font-weight:700;font-size:0.95rem;
-                  text-decoration:none;margin-bottom:10px;box-sizing:border-box;">
-          <i class="bi bi-whatsapp"></i>
-          Abrir WhatsApp para ${aluno.nome.split(" ")[0]}
-        </a>
-
-        <!-- Pular -->
-        <button onclick="_proxTransmissao()"
-          style="width:100%;padding:10px;background:transparent;border:1px solid var(--border);
-                 border-radius:11px;color:var(--muted);font-size:0.85rem;cursor:pointer;">
-          Pular este aluno
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-}
-
-function _proxTransmissao() {
-  _transmissaoIndex++;
-  _abrirModalTransmissao();
-}
-
-function fecharTransmissao() {
-  document.getElementById("modal-transmissao")?.remove();
-  _transmissaoLista = [];
-  _transmissaoIndex = 0;
-}
-
-// ===== LISTENERS DE FILTROS (registrados uma única vez) =====
+// Listeners registrados uma única vez
 document
   .getElementById("filter-modal")
   ?.addEventListener("change", renderAlunos);
@@ -1890,13 +1798,12 @@ window.saveAluno = saveAluno;
 window.marcarRealizada = marcarRealizada;
 window.logout = logout;
 window.openWhatsApp = openWhatsApp;
+
 window.registrarPagamento = registrarPagamento;
+
 window.abrirModalPagamento = abrirModalPagamento;
 window.fecharModalPagamento = fecharModalPagamento;
 window.confirmarPagamento = confirmarPagamento;
 window.renderPagamentos = renderPagamentos;
+
 window.openWhatsAppAvaliacao = openWhatsAppAvaliacao;
-window.openWhatsAppAniversario = openWhatsAppAniversario;
-window.transmitirSolicitarNascimento = transmitirSolicitarNascimento;
-window.fecharTransmissao = fecharTransmissao;
-window._proxTransmissao = _proxTransmissao;
