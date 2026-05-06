@@ -111,6 +111,28 @@
                     </div>
                 </div>
 
+                <!-- FINANCEIRO -->
+                <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-top:-12px">
+                    <div class="stat-card" onclick="navigate('pagamentos')" style="cursor:pointer">
+                        <div class="label">Faturamento do Mês</div>
+                        <div class="value" id="stat-fat-mes" style="font-size:2rem">R$ 0</div>
+                        <div class="sub">pagamentos registrados</div>
+                        <div class="accent-bar" style="background:var(--green)"></div>
+                    </div>
+                    <div class="stat-card" onclick="navigate('alertas')" style="cursor:pointer">
+                        <div class="label">Inadimplentes</div>
+                        <div class="value" id="stat-inadimplentes">0</div>
+                        <div class="sub">planos vencidos</div>
+                        <div class="accent-bar" style="background:var(--danger)"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Receita Esperada</div>
+                        <div class="value" id="stat-rec-esperada" style="font-size:2rem">R$ 0</div>
+                        <div class="sub">mensalidades dos ativos</div>
+                        <div class="accent-bar" style="background:var(--blue)"></div>
+                    </div>
+                </div>
+
                 <div class="dash-grid">
                     <div class="card">
                         <h3>
@@ -176,6 +198,16 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- GRÁFICO 6 MESES -->
+                <div class="card" style="margin-top:20px">
+                    <h3>
+                        <i class="bi bi-graph-up-arrow" style="color:var(--green)"></i>
+                        Faturamento – Últimos 6 Meses
+                    </h3>
+                    <canvas id="chart-receita" height="90"></canvas>
+                </div>
+
             </div>
 
             <!-- ALUNOS -->
