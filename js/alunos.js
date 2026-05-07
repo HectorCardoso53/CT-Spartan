@@ -6,7 +6,7 @@ import { alunos, editingId, setEditingId } from "./state.js";
 import {
   showLoading, hideLoading, showToast,
   fmtDate, calcularIdade, diasAteVencer, calcularStatusAluno,
-  daysFromNow, statusBadge, turmaLabel,
+  daysFromNow, statusBadge, turmaLabel, diasParaAniversario,
 } from "./utils.js";
 
 export function populateHorarioFilter() {
@@ -68,7 +68,16 @@ export function renderAlunos() {
 <td>${statusBadge[calcularStatusAluno(a)]}</td>
 <td>
   <button class="icon-btn" onclick="abrirModalPagamento(${idx})"><i class="bi bi-cash"></i></button>
-  <button class="icon-btn" onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')"><i class="bi bi-whatsapp"></i></button>
+  ${(() => {
+      const hoje = new Date().toISOString().slice(0, 10);
+      const ehAniversario = diasParaAniversario(a.nascimento) === 0 && a.aniversarioEnviadoEm !== hoje;
+      if (a.bemVindoEnviado === false)
+        return `<button class="icon-btn" onclick="openWhatsAppBoasVindas('${a.tel}','${a.nome}','${a.id}')" style="color:#22c55e;border-color:#22c55e33;background:#22c55e11" title="Enviar boas-vindas 🎉"><i class="bi bi-whatsapp"></i></button>`;
+      if (ehAniversario)
+        return `<button class="icon-btn" onclick="openWhatsAppAniversario('${a.tel}','${a.nome}','${a.id}')" style="color:#f5a623;border-color:#f5a62333;background:#f5a62311" title="Feliz Aniversário 🎂"><i class="bi bi-whatsapp"></i></button>`;
+      return `<button class="icon-btn" onclick="openWhatsApp('${a.tel}','${a.nome}','${a.vencimento}')" title="Cobrança"><i class="bi bi-whatsapp"></i></button>`;
+    })()
+  }
   <button class="icon-btn" onclick="editAluno(${idx})"><i class="bi bi-pencil-square"></i></button>
   <button class="icon-btn" onclick="deleteAluno(${idx})"><i class="bi bi-trash"></i></button>
 </td>
@@ -224,6 +233,7 @@ export async function saveAluno() {
     responsavel: "Rodrigo Pedroso",
     status: document.getElementById("f-status").value,
     statusAval: editingId !== null ? alunos[editingId].statusAval : "Pendente",
+    bemVindoEnviado: editingId !== null ? (alunos[editingId].bemVindoEnviado ?? true) : false,
     dataEntrada: new Date().toISOString().slice(0, 10),
   };
 

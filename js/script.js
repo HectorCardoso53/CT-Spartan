@@ -21,7 +21,7 @@ import {
 import { renderTurmas, abrirTurma, filtrarPorTurma } from "./turmas.js";
 import { renderAvaliacoes, marcarRealizada } from "./avaliacoes.js";
 import { renderAlertas } from "./alertas.js";
-import { openWhatsApp, openWhatsAppAvaliacao } from "./whatsapp.js";
+import { openWhatsApp, openWhatsAppAvaliacao, openWhatsAppBoasVindas, openWhatsAppAniversario } from "./whatsapp.js";
 
 protectRoute();
 
@@ -131,3 +131,5 @@ window.filtrarPorTurma = filtrarPorTurma;
 window.marcarRealizada = marcarRealizada;
 window.openWhatsApp = openWhatsApp;
 window.openWhatsAppAvaliacao = openWhatsAppAvaliacao;
+window.openWhatsAppBoasVindas = openWhatsAppBoasVindas;
+window.openWhatsAppAniversario = openWhatsAppAniversario;

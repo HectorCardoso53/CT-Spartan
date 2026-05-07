@@ -91,6 +91,7 @@ export function calcularIdade(dataNasc) {
 export function diasParaAniversario(dataNasc) {
   if (!dataNasc) return null;
   const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
   const [, mes, dia] = dataNasc.split("-").map(Number);
   let prox = new Date(hoje.getFullYear(), mes - 1, dia);
   if (prox < hoje) prox = new Date(hoje.getFullYear() + 1, mes - 1, dia);
