@@ -1,4 +1,5 @@
 import { alunos } from "./state.js";
+
 import {
   diasAteVencer, fmtDate, iniciais, calcularStatusAluno, avatarColors,
 } from "./utils.js";
@@ -18,6 +19,9 @@ export function renderDashboard() {
 
   const atrasados = alunos.filter((a) => calcularStatusAluno(a) === "Atrasado").length;
   document.getElementById("leg-atr").textContent = atrasados;
+
+  const elInad = document.getElementById("stat-inadimplentes");
+  if (elInad) elInad.textContent = atrasados;
 
   // DONUT
   const total = alunos.length || 1;
