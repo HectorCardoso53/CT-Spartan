@@ -1,4 +1,4 @@
-import { alunos, pagamentos } from "./state.js";
+import { alunos } from "./state.js";
 import {
   diasAteVencer, fmtDate, iniciais, calcularStatusAluno, avatarColors,
 } from "./utils.js";
@@ -89,26 +89,6 @@ export function renderDashboard() {
       </div>`).join("");
   }
 
-  // FINANCEIRO
-  const mesAtual = new Date().toISOString().slice(0, 7);
-  const fatMes = pagamentos
-    .filter((p) => p.mes === mesAtual)
-    .reduce((sum, p) => sum + Number(p.valor), 0);
-  const inadimplentes = alunos.filter((a) => calcularStatusAluno(a) === "Atrasado").length;
-  const recEsperada = alunos
-    .filter((a) => a.status === "Ativo")
-    .reduce((sum, a) => sum + Number(a.valor || 0), 0);
-
-  const elFat = document.getElementById("stat-fat-mes");
-  if (elFat) elFat.textContent = "R$ " + fatMes.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
-
-  const elInad = document.getElementById("stat-inadimplentes");
-  if (elInad) elInad.textContent = inadimplentes;
-
-  const elRec = document.getElementById("stat-rec-esperada");
-  if (elRec) elRec.textContent = "R$ " + recEsperada.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
-
-  renderGraficoReceita();
 }
 
 export function renderGraficoReceita() {
