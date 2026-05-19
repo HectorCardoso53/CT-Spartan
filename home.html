@@ -69,6 +69,8 @@
             </button>
             <h2 id="page-title">Dashboard</h2>
             <div class="topbar-actions">
+                <span id="badge-fechamento" class="badge rounded-pill fs-6" role="button" title="Dia de pagamento do sistema (todo dia 11)"></span>
+
                 <div class="notif-bell" onclick="navigate('alertas')">
                     <i class="bi bi-bell-fill"></i>
                     <div class="notif-dot"></div>
@@ -711,6 +713,27 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script type="module" src="js/script.js"></script>
     <script type="module" src="js/home.js"></script>
+    <script>
+      (function () {
+        const hoje = new Date();
+        hoje.setHours(0, 0, 0, 0);
+        let pagamento = new Date(hoje.getFullYear(), hoje.getMonth(), 11);
+        if (hoje > pagamento) pagamento = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 11);
+        const dias = Math.round((pagamento - hoje) / (1000 * 60 * 60 * 24));
+
+        const badge = document.getElementById("badge-fechamento");
+        if (dias === 0) {
+          badge.textContent = "💳 Pagamento do sistema HOJE!";
+          badge.className = "badge rounded-pill fs-6 bg-danger";
+        } else if (dias <= 5) {
+          badge.textContent = `💳 Pagamento do sistema em ${dias} dia${dias > 1 ? "s" : ""}`;
+          badge.className = "badge rounded-pill fs-6 bg-warning text-dark";
+        } else {
+          badge.textContent = `💳 Sistema: ${dias} dias para pagar`;
+          badge.className = "badge rounded-pill fs-6 bg-success";
+        }
+      })();
+    </script>
 </body>
 
 </html>
