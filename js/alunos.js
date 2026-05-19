@@ -55,13 +55,13 @@ export function renderAlunos() {
     if (dias === 0) { vencLabel = "Vence HOJE"; vencColor = "var(--gold)"; }
     if (dias > 0 && dias <= 3) { vencLabel = `Vence em ${dias}d`; vencColor = "var(--gold)"; }
 
-    const horario = a.modalidade === "funcional" ? turmaLabel[a.turma] || a.turma : a.horario || "-";
+    const horario = a.modalidade === "funcional" ? turmaLabel[a.turma] || a.turma : a.modalidade === "musculacao" ? a.horario || "-" : "Livre";
 
     return `
 <tr>
 <td class="td-name">${a.nome}<small>${a.tel}</small></td>
 <td>${a.nascimento ? fmtDate(a.nascimento) : "-"}<br><small>${a.nascimento ? calcularIdade(a.nascimento) + " anos" : ""}</small></td>
-<td>${a.modalidade === "musculacao" ? "Musculação" : "Funcional"}</td>
+<td>${a.modalidade === "musculacao" ? "Musculação" : a.modalidade === "funcional" ? "Funcional" : "Treino Livre"}</td>
 <td>R$ ${Number(a.valor || 0).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</td>
 <td>${horario}</td>
 <td style="color:${vencColor}">${vencLabel}</td>

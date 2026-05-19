@@ -48,6 +48,10 @@
                 <span class="icon"><i class="bi bi-bell"></i></span> Alertas
             </div>
 
+            <div class="nav-item" onclick="navigate('treino-livre')">
+                <span class="icon"><i class="bi bi-person-walking"></i></span> Treino Livre
+            </div>
+
             <div class="nav-item" onclick="navigate('pagamentos')">
                 <span class="icon"><i class="bi bi-cash-stack"></i></span> Pagamentos
             </div>
@@ -401,6 +405,54 @@
 
             </div>
 
+            <!-- TREINO LIVRE -->
+            <div class="page" id="page-treino-livre">
+
+                <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+                    <div class="stat-card">
+                        <div class="label">Total</div>
+                        <div class="value" id="tl-total">0</div>
+                        <div class="sub">alunos treino livre</div>
+                        <div class="accent-bar" style="background:var(--accent2)"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Ativos</div>
+                        <div class="value" id="tl-ativos">0</div>
+                        <div class="sub">em dia</div>
+                        <div class="accent-bar" style="background:var(--green)"></div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="label">Atrasados</div>
+                        <div class="value" id="tl-atrasados">0</div>
+                        <div class="sub">planos vencidos</div>
+                        <div class="accent-bar" style="background:var(--danger)"></div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Aluno</th>
+                                    <th>Nascimento</th>
+                                    <th>Valor</th>
+                                    <th>Vencimento</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tl-tbody"></tbody>
+                        </table>
+                        <div class="empty" id="tl-empty" style="display:none">
+                            <div class="empty-icon"><i class="bi bi-person-walking"></i></div>
+                            <div>Nenhum aluno no treino livre</div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
             <!-- PAGAMENTOS -->
             <div class="page" id="page-pagamentos">
 
@@ -529,6 +581,7 @@
                             <option value="">Selecione</option>
                             <option value="musculacao">Musculação</option>
                             <option value="funcional">Funcional</option>
+                            <option value="treino-livre">Treino Livre</option>
                         </select>
                     </div>
 

@@ -21,7 +21,8 @@ import {
 import { renderTurmas, abrirTurma, filtrarPorTurma } from "./turmas.js";
 import { renderAvaliacoes, marcarRealizada } from "./avaliacoes.js";
 import { renderAlertas } from "./alertas.js";
-import { openWhatsApp, openWhatsAppAvaliacao, openWhatsAppBoasVindas, openWhatsAppAniversario } from "./whatsapp.js";
+import { renderTreinoLivre } from "./treinoLivre.js";
+import { openWhatsApp, openWhatsAppAvaliacao, openWhatsAppBoasVindas, openWhatsAppAniversario, transmitirSolicitarNascimento } from "./whatsapp.js";
 
 protectRoute();
 
@@ -41,6 +42,7 @@ function navigate(page) {
     turmas: "Turmas & Horários",
     avaliacoes: "Avaliações Físicas",
     alertas: "Alertas",
+    "treino-livre": "Treino Livre",
     pagamentos: "Pagamentos",
   };
   document.getElementById("page-title").textContent = titles[page] || page;
@@ -50,6 +52,7 @@ function navigate(page) {
   if (page === "turmas") renderTurmas();
   if (page === "avaliacoes") renderAvaliacoes();
   if (page === "alertas") renderAlertas();
+  if (page === "treino-livre") renderTreinoLivre();
   if (page === "pagamentos") carregarPagamentos();
 
   if (window.innerWidth <= 600) {
@@ -125,6 +128,7 @@ window.registrarPagamento = registrarPagamento;
 window.renderPagamentos = renderPagamentos;
 
 window.renderTurmas = renderTurmas;
+window.renderTreinoLivre = renderTreinoLivre;
 window.abrirTurma = abrirTurma;
 window.filtrarPorTurma = filtrarPorTurma;
 
@@ -133,3 +137,4 @@ window.openWhatsApp = openWhatsApp;
 window.openWhatsAppAvaliacao = openWhatsAppAvaliacao;
 window.openWhatsAppBoasVindas = openWhatsAppBoasVindas;
 window.openWhatsAppAniversario = openWhatsAppAniversario;
+window.transmitirSolicitarNascimento = transmitirSolicitarNascimento;

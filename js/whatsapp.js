@@ -2,6 +2,7 @@ import { db } from "./firebase.js";
 import {
   doc, updateDoc,
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { alunos } from "./state.js";
 import { fmtDate, showToast, diasAteVencer } from "./utils.js";
 
 function formatarNumeroWpp(tel) {
@@ -43,6 +44,27 @@ export async function openWhatsAppAniversario(tel, nome, alunoId) {
   const hoje = new Date().toISOString().slice(0, 10);
   await updateDoc(doc(db, "alunos", alunoId), { aniversarioEnviadoEm: hoje });
   await window.carregarAlunos();
+}
+
+export function transmitirSolicitarNascimento() {
+  const semNascimento = alunos.filter((a) => !a.nascimento && a.tel);
+
+  if (semNascimento.length === 0) {
+    showToast("Todos os alunos já têm data de nascimento cadastrada!", "success");
+    return;
+  }
+
+  if (!confirm(`Enviar mensagem para ${semNascimento.length} aluno(s) sem data de nascimento?`)) return;
+
+  semNascimento.forEach((a, i) => {
+    const numero = formatarNumeroWpp(a.tel);
+    const mensagem = `Olá ${a.nome}! 👋\n\nPrecisamos que você nos informe sua data de nascimento para manter seu cadastro atualizado no CT Spartan.\n\nPor favor, nos responda com sua data no formato DD/MM/AAAA.\n\nObrigado! 💪🔥\nCT Spartan`;
+    setTimeout(() => {
+      window.open(`https://api.whatsapp.com/send?phone=${numero}&text=${encodeURIComponent(mensagem)}`, "_blank");
+    }, i * 1500);
+  });
+
+  showToast(`Enviando para ${semNascimento.length} aluno(s)...`);
 }
 
 export function openWhatsAppAvaliacao(tel, nome, avaliacao) {
