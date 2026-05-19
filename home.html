@@ -722,14 +722,15 @@
         const dias = Math.round((pagamento - hoje) / (1000 * 60 * 60 * 24));
 
         const badge = document.getElementById("badge-fechamento");
+        const icon = '<i class="bi bi-calendar2-check me-1"></i>';
         if (dias === 0) {
-          badge.textContent = "💳 Pagamento do sistema HOJE!";
+          badge.innerHTML = icon + "Pagamento do sistema HOJE!";
           badge.className = "badge rounded-pill fs-6 bg-danger";
         } else if (dias <= 5) {
-          badge.textContent = `💳 Pagamento do sistema em ${dias} dia${dias > 1 ? "s" : ""}`;
+          badge.innerHTML = icon + `Pagamento do sistema em ${dias} dia${dias > 1 ? "s" : ""}`;
           badge.className = "badge rounded-pill fs-6 bg-warning text-dark";
         } else {
-          badge.textContent = `💳 Sistema: ${dias} dias para pagar`;
+          badge.innerHTML = icon + `Sistema: ${dias} dias para pagar`;
           badge.className = "badge rounded-pill fs-6 bg-success";
         }
       })();
