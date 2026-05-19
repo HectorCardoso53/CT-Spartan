@@ -715,6 +715,7 @@
     <script type="module" src="js/home.js"></script>
     <script>
       (function () {
+        const PIX = "041.346.852-65";
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
         let pagamento = new Date(hoje.getFullYear(), hoje.getMonth(), 11);
@@ -723,15 +724,20 @@
 
         const badge = document.getElementById("badge-fechamento");
         const icon = '<i class="bi bi-calendar2-check me-1"></i>';
+
         if (dias === 0) {
-          badge.innerHTML = icon + "Pagamento do sistema HOJE!";
+          badge.innerHTML = icon + `Pagar sistema HOJE! | PIX: ${PIX}`;
           badge.className = "badge rounded-pill fs-6 bg-danger";
         } else if (dias <= 5) {
-          badge.innerHTML = icon + `Pagamento do sistema em ${dias} dia${dias > 1 ? "s" : ""}`;
+          badge.innerHTML = icon + `Pagar sistema em ${dias} dia${dias > 1 ? "s" : ""} | PIX: ${PIX}`;
           badge.className = "badge rounded-pill fs-6 bg-warning text-dark";
         } else {
           badge.innerHTML = icon + `Sistema: ${dias} dias para pagar`;
           badge.className = "badge rounded-pill fs-6 bg-success";
+          badge.setAttribute("data-bs-toggle", "tooltip");
+          badge.setAttribute("data-bs-placement", "bottom");
+          badge.setAttribute("title", `PIX para pagamento: ${PIX}`);
+          new bootstrap.Tooltip(badge);
         }
       })();
     </script>
